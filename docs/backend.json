@@ -1,0 +1,437 @@
+{
+  "entities": {
+    "Patient": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Patient",
+      "type": "object",
+      "description": "Represents a patient in the veterinary clinic.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Patient entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Patient's name."
+        },
+        "breed": {
+          "type": "string",
+          "description": "Patient's breed."
+        },
+        "species": {
+          "type": "string",
+          "description": "Patient's species."
+        },
+        "age": {
+          "type": "number",
+          "description": "Patient's age in years."
+        },
+        "weight": {
+          "type": "number",
+          "description": "Patient's weight in kilograms."
+        },
+        "gender": {
+          "type": "string",
+          "description": "Patient's gender."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "breed",
+        "species",
+        "age",
+        "weight",
+        "gender"
+      ]
+    },
+    "Client": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Client",
+      "type": "object",
+      "description": "Represents a client (owner) of a patient.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Client entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Client's name."
+        },
+        "address": {
+          "type": "string",
+          "description": "Client's address."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "Client's phone number."
+        },
+        "visitDate": {
+          "type": "string",
+          "description": "Date of the client's visit.",
+          "format": "date-time"
+        },
+        "responsiblePerson": {
+          "type": "string",
+          "description": "Name of the responsible person for the patient."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "address",
+        "phoneNumber",
+        "visitDate",
+        "responsiblePerson"
+      ]
+    },
+    "PresentStatus": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PresentStatus",
+      "type": "object",
+      "description": "Represents the present health status of a patient.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the PresentStatus entity."
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Reference to Patient. (Relationship: Patient 1:N PresentStatus)"
+        },
+        "actions": {
+          "type": "string",
+          "description": "Observed actions of the patient."
+        },
+        "behavior": {
+          "type": "string",
+          "description": "Observed behavior of the patient."
+        },
+        "hydration": {
+          "type": "string",
+          "description": "Patient's hydration status."
+        },
+        "posture": {
+          "type": "string",
+          "description": "Patient's standing posture."
+        },
+        "temperature": {
+          "type": "number",
+          "description": "Patient's body temperature in Celsius."
+        },
+        "heartRate": {
+          "type": "number",
+          "description": "Patient's heart rate in beats per minute."
+        },
+        "respiratoryRate": {
+          "type": "number",
+          "description": "Patient's respiratory rate in breaths per minute."
+        }
+      },
+      "required": [
+        "id",
+        "patientId",
+        "actions",
+        "behavior",
+        "hydration",
+        "posture",
+        "temperature",
+        "heartRate",
+        "respiratoryRate"
+      ]
+    },
+    "Doctor": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Doctor",
+      "type": "object",
+      "description": "Represents a doctor in the veterinary clinic.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Doctor entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Doctor's name."
+        },
+        "gender": {
+          "type": "string",
+          "description": "Doctor's gender."
+        },
+        "address": {
+          "type": "string",
+          "description": "Doctor's address."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "Doctor's phone number."
+        },
+        "schedule": {
+          "type": "string",
+          "description": "Doctor's work schedule."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "gender",
+        "address",
+        "phoneNumber",
+        "schedule"
+      ]
+    },
+    "Medication": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Medication",
+      "type": "object",
+      "description": "Represents a medication in the clinic's inventory.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Medication entity."
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of medication (e.g., antibiotic, pain reliever)."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the medication."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the medication."
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "name",
+        "price"
+      ]
+    },
+    "Examination": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Examination",
+      "type": "object",
+      "description": "Represents a medical examination record.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Examination entity."
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the examination.",
+          "format": "date-time"
+        },
+        "doctorId": {
+          "type": "string",
+          "description": "Reference to Doctor. (Relationship: Doctor 1:N Examination)"
+        },
+        "patientId": {
+          "type": "string",
+          "description": "Reference to Patient. (Relationship: Patient 1:N Examination)"
+        },
+        "diseaseId": {
+          "type": "string",
+          "description": "Reference to Disease. (Relationship: Disease 1:N Examination)"
+        },
+        "complaints": {
+          "type": "string",
+          "description": "Patient's complaints during the examination."
+        },
+        "diagnosis": {
+          "type": "string",
+          "description": "Diagnosis made by the doctor."
+        }
+      },
+      "required": [
+        "id",
+        "date",
+        "doctorId",
+        "patientId",
+        "diseaseId",
+        "complaints",
+        "diagnosis"
+      ]
+    },
+    "Disease": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Disease",
+      "type": "object",
+      "description": "Represents a disease.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Disease entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the disease."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the disease."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/doctors/{doctorId}",
+        "definition": {
+          "entityName": "Doctor",
+          "schema": {
+            "$ref": "#/backend/entities/Doctor"
+          },
+          "description": "Stores doctor profiles. Doctors can only access their own profiles.",
+          "params": [
+            {
+              "name": "doctorId",
+              "description": "The unique identifier for the doctor."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/doctors/{doctorId}/patients/{patientId}",
+        "definition": {
+          "entityName": "Patient",
+          "schema": {
+            "$ref": "#/backend/entities/Patient"
+          },
+          "description": "Stores patient information associated with a specific doctor.",
+          "params": [
+            {
+              "name": "doctorId",
+              "description": "The unique identifier for the doctor."
+            },
+            {
+              "name": "patientId",
+              "description": "The unique identifier for the patient."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/doctors/{doctorId}/patients/{patientId}/clients/{clientId}",
+        "definition": {
+          "entityName": "Client",
+          "schema": {
+            "$ref": "#/backend/entities/Client"
+          },
+          "description": "Stores client information for a specific patient managed by a doctor.",
+          "params": [
+            {
+              "name": "doctorId",
+              "description": "The unique identifier for the doctor."
+            },
+            {
+              "name": "patientId",
+              "description": "The unique identifier for the patient."
+            },
+            {
+              "name": "clientId",
+              "description": "The unique identifier for the client."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/doctors/{doctorId}/patients/{patientId}/presentStatuses/{presentStatusId}",
+        "definition": {
+          "entityName": "PresentStatus",
+          "schema": {
+            "$ref": "#/backend/entities/PresentStatus"
+          },
+          "description": "Stores the present status of a patient.",
+          "params": [
+            {
+              "name": "doctorId",
+              "description": "The unique identifier for the doctor."
+            },
+            {
+              "name": "patientId",
+              "description": "The unique identifier for the patient."
+            },
+            {
+              "name": "presentStatusId",
+              "description": "The unique identifier for the present status."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/doctors/{doctorId}/patients/{patientId}/examinations/{examinationId}",
+        "definition": {
+          "entityName": "Examination",
+          "schema": {
+            "$ref": "#/backend/entities/Examination"
+          },
+          "description": "Stores examination records for a specific patient under a doctor.",
+          "params": [
+            {
+              "name": "doctorId",
+              "description": "The unique identifier for the doctor."
+            },
+            {
+              "name": "patientId",
+              "description": "The unique identifier for the patient."
+            },
+            {
+              "name": "examinationId",
+              "description": "The unique identifier for the examination."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/medications/{medicationId}",
+        "definition": {
+          "entityName": "Medication",
+          "schema": {
+            "$ref": "#/backend/entities/Medication"
+          },
+          "description": "Stores information about medications. Globally accessible.",
+          "params": [
+            {
+              "name": "medicationId",
+              "description": "The unique identifier for the medication."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/diseases/{diseaseId}",
+        "definition": {
+          "entityName": "Disease",
+          "schema": {
+            "$ref": "#/backend/entities/Disease"
+          },
+          "description": "Stores information about diseases. Globally accessible.",
+          "params": [
+            {
+              "name": "diseaseId",
+              "description": "The unique identifier for the disease."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to manage veterinary clinic records efficiently.  The structure leverages path-based ownership for `patients`, `clients`, `presentStatuses`, and `examinations` associated with a specific `doctor`. This approach ensures Authorization Independence by storing relevant access control information directly within each document. The `doctors` collection stores doctor profiles, while `medications` and `diseases` are stored in root-level collections since they do not have a direct hierarchical relationship with users and are globally accessible.\n\nAuthorization Independence:\n*   Patient, Client, PresentStatus, and Examination data is nested under the doctor's ID.  Access to this data is controlled by the user ID, and security rules can directly check `request.auth.uid` against the `doctorId` in the path without needing `get()` calls.\n\nQAPs Support:\n*   Segregation:  Data with different access needs is stored in separate collections (e.g., `doctors`, `medications`, `diseases`). This simplifies security rules and avoids the need for complex filtering.\n*   Path-Based Ownership: The use of `/doctors/{doctorId}/patients/{patientId}` creates a clear ownership model, making list operations secure as they are scoped to a specific doctor."
+  }
+}
