@@ -74,7 +74,7 @@ service cloud.firestore {
      */
     match /doctors/{doctorId} {
       allow get: if isOwner(doctorId);
-      allow list: if false; // Prevent enumeration of all doctors for privacy
+      allow list: if request.auth != null;
       allow create: if isOwner(doctorId) && request.resource.data.id == doctorId;
       allow update: if isExistingOwner(doctorId);
       allow delete: if isExistingOwner(doctorId);
