@@ -3,13 +3,16 @@
 import { useState, useMemo, useEffect } from 'react';
 import { collectionGroup, onSnapshot, QuerySnapshot, DocumentData, Unsubscribe, FirestoreError, collection } from 'firebase/firestore';
 import { useFirebase, useUser, useMemoFirebase } from '@/firebase';
-import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
+import { addDays, startOfWeek, format, isSameDay } from 'date-fns';
+import { id } from 'date-fns/locale';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from './ui/button';
 
 interface Schedule {
   day: string;
@@ -18,15 +21,17 @@ interface Schedule {
 }
 
 interface Doctor {
-    id: string;
-    name: string;
-    schedule: Schedule[];
+  id: string;
+  name: string;
+  schedule: Schedule[];
 }
 
 interface CalendarEvent {
   date: Date;
   title: string;
-  type: 'visit' | 'exam' | 'doctor';
+  type: 'visit' | 'exam';
+  doctorName?: string;
+  patientName?: string;
 }
 
 const dayNameToNumber: { [key: string]: number } = {
@@ -39,21 +44,30 @@ const dayNameToNumber: { [key: string]: number } = {
   'sabtu': 6,
 };
 
+const daysOfWeek = [
+    { name: 'Senin', value: 1 },
+    { name: 'Selasa', value: 2 },
+    { name: 'Rabu', value: 3 },
+    { name: 'Kamis', value: 4 },
+    { name: 'Jumat', value: 5 },
+    { name: 'Sabtu', value: 6 },
+    { name: 'Minggu', value: 0 },
+];
+
 export function ScheduleCalendar() {
   const { firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
   const [appointmentEvents, setAppointmentEvents] = useState<CalendarEvent[]>([]);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(true);
   const { toast } = useToast();
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-  // Fetch doctors
   const doctorsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'doctors');
   }, [firestore]);
   const { data: doctors, isLoading: isLoadingDoctors } = useCollection<Doctor>(doctorsQuery);
 
-  // Fetch appointments (clients and examinations)
   useEffect(() => {
     if (!firestore || !user) return;
 
@@ -82,11 +96,6 @@ export function ScheduleCalendar() {
             path: path
         });
         errorEmitter.emit('permission-error', contextualError);
-        toast({
-            variant: 'destructive',
-            title: `Gagal memuat data ${path}`,
-            description: 'Anda tidak memiliki izin untuk melihat data ini.',
-        });
     };
 
     const clientQuery = collectionGroup(firestore, 'clients');
@@ -125,126 +134,124 @@ export function ScheduleCalendar() {
     return () => {
       unsubscribes.forEach(unsub => unsub());
     };
-  }, [firestore, toast, user]);
+  }, [firestore, user]);
   
-  const eventsByDate = useMemo(() => {
-    const allEvents: CalendarEvent[] = [...appointmentEvents];
+  const weekDates = useMemo(() => {
+    const start = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday
+    return Array.from({ length: 7 }).map((_, i) => addDays(start, i));
+  }, [currentDate]);
 
+  const schedulesByDay = useMemo(() => {
+    const schedules: { [key: number]: { doctor: Doctor, schedule: Schedule }[] } = {};
     if (doctors) {
-        const today = new Date();
-        const twoMonthsFromNow = new Date();
-        twoMonthsFromNow.setMonth(today.getMonth() + 2);
-
-        for (let d = new Date(today.getFullYear(), today.getMonth() - 1, 1); d < twoMonthsFromNow; d.setDate(d.getDate() + 1)) {
-            const dayOfWeek = d.getDay();
-            doctors.forEach(doctor => {
-                doctor.schedule?.forEach(slot => {
-                    if (dayNameToNumber[slot.day.toLowerCase()] === dayOfWeek) {
-                        allEvents.push({
-                            date: new Date(d),
-                            title: `Dr. ${doctor.name} (${slot.startTime}-${slot.endTime})`,
-                            type: 'doctor'
-                        });
-                    }
-                });
-            });
-        }
+      doctors.forEach(doctor => {
+        doctor.schedule?.forEach(slot => {
+          const dayIndex = dayNameToNumber[slot.day.toLowerCase()];
+          if (schedules[dayIndex] === undefined) {
+            schedules[dayIndex] = [];
+          }
+          schedules[dayIndex].push({ doctor, schedule: slot });
+        });
+      });
     }
+    return schedules;
+  }, [doctors]);
 
-    return allEvents.reduce((acc, event) => {
-        const dateString = event.date.toDateString();
-        if (!acc[dateString]) {
-            acc[dateString] = [];
+  const appointmentsByDay = useMemo(() => {
+    const appointments: { [key: string]: CalendarEvent[] } = {};
+    appointmentEvents.forEach(event => {
+        const dateString = format(event.date, 'yyyy-MM-dd');
+        if (!appointments[dateString]) {
+            appointments[dateString] = [];
         }
-        acc[dateString].push(event);
-        return acc;
-    }, {} as Record<string, CalendarEvent[]>);
-  }, [appointmentEvents, doctors]);
+        appointments[dateString].push(event);
+    });
+    return appointments;
+  }, [appointmentEvents]);
 
 
-  const DayWithEvents = ({ date, ...props }: { date: Date } & any) => {
-    const dateString = date.toDateString();
-    const dayEvents = eventsByDate[dateString] || [];
-    
-    return (
-      <div {...props}>
-        <div className="relative flex items-center justify-center h-full w-full">
-            <span>{date.getDate()}</span>
-            {dayEvents.length > 0 && (
-                <div className="absolute -bottom-1 flex space-x-0.5">
-                    {dayEvents.slice(0, 3).map((event, index) => (
-                        <div key={index} className={`h-1 w-1 rounded-full ${
-                            event.type === 'visit' ? 'bg-blue-500' :
-                            event.type === 'exam' ? 'bg-green-500' : 'bg-purple-500'
-                        }`}></div>
-                    ))}
-                </div>
-            )}
-        </div>
-      </div>
-    );
-  };
-  
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const selectedDayEvents = selectedDate ? eventsByDate[selectedDate.toDateString()] : [];
+  const goToPreviousWeek = () => setCurrentDate(prev => addDays(prev, -7));
+  const goToNextWeek = () => setCurrentDate(prev => addDays(prev, 7));
+
   const displayLoading = isLoadingAppointments || isLoadingDoctors || isUserLoading;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <Card className="lg:col-span-2">
-        <CardContent className="p-0">
-          {displayLoading ? (
-            <div className="p-6">
-                <Skeleton className="w-full h-[300px]" />
+    <Card className="w-full">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+            <div>
+                <CardTitle>Jadwal Mingguan Dokter</CardTitle>
+                <CardDescription>
+                    Menampilkan jadwal praktik dokter dan janji temu untuk minggu ini.
+                </CardDescription>
             </div>
-          ) : (
-            <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                className="p-0 [&_td]:w-14 [&_td]:h-14 [&_th]:w-14"
-                components={{
-                    Day: DayWithEvents
-                }}
-            />
-          )}
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Detail Jadwal</CardTitle>
-          <CardDescription>
-            {selectedDate ? selectedDate.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'}) : 'Pilih tanggal'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-            {displayLoading ? (
-                 <div className="space-y-4">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                 </div>
-            ) : selectedDayEvents && selectedDayEvents.length > 0 ? (
-                <ul className="space-y-2">
-                    {selectedDayEvents.sort((a,b) => a.type.localeCompare(b.type)).map((event, index) => (
-                        <li key={index} className="p-2 rounded-md bg-muted">
-                            <Badge variant={
-                                event.type === 'visit' ? 'secondary' :
-                                event.type === 'exam' ? 'default' : 'destructive'
-                                } className="mr-2">
-                                {
-                                event.type === 'visit' ? 'Kunjungan' :
-                                event.type === 'exam' ? 'Pemeriksaan' : 'Jadwal Dokter'
-                                }
-                            </Badge>
-                            <span className="text-sm">{event.title}</span>
-                        </li>
-                    ))}
-                </ul>
-            ) : (
-                <p className="text-sm text-muted-foreground">Tidak ada jadwal pada tanggal ini.</p>
-            )}
-        </CardContent>
-      </Card>
-    </div>
+             <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={goToPreviousWeek}>
+                    <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm font-medium w-48 text-center">
+                    {format(weekDates[0], 'd MMM', { locale: id })} - {format(weekDates[6], 'd MMM yyyy', { locale: id })}
+                </span>
+                <Button variant="outline" size="icon" onClick={goToNextWeek}>
+                    <ChevronRight className="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {displayLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
+                 {Array.from({ length: 7 }).map((_, i) => (
+                    <div key={i} className="p-2 border rounded-lg min-h-[200px]">
+                        <Skeleton className="h-6 w-1/2 mb-4" />
+                        <Skeleton className="h-10 w-full mb-2" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                ))}
+            </div>
+        ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-2 items-start">
+                {weekDates.map(date => {
+                    const dayIndex = date.getDay();
+                    const daySchedules = schedulesByDay[dayIndex] || [];
+                    const dayAppointments = appointmentsByDay[format(date, 'yyyy-MM-dd')] || [];
+
+                    return (
+                        <div key={date.toString()} className="border rounded-lg p-3 bg-muted/50 min-h-[200px]">
+                            <h3 className="font-semibold text-center mb-1">{format(date, 'EEEE', { locale: id })}</h3>
+                            <p className="text-xs text-muted-foreground text-center mb-3">{format(date, 'd MMM', { locale: id })}</p>
+                            <div className="space-y-3">
+                                {daySchedules.length > 0 && (
+                                    <div className="space-y-1">
+                                         <h4 className="text-xs font-bold text-primary">Jadwal Praktek</h4>
+                                         {daySchedules.sort((a,b) => a.schedule.startTime.localeCompare(b.schedule.startTime)).map(({ doctor, schedule }, i) => (
+                                            <div key={i} className="text-xs p-2 bg-background rounded-md shadow-sm">
+                                                <p className="font-semibold">{doctor.name}</p>
+                                                <p className="text-muted-foreground">{schedule.startTime} - {schedule.endTime}</p>
+                                            </div>
+                                         ))}
+                                    </div>
+                                )}
+                                {dayAppointments.length > 0 && (
+                                    <div className="space-y-1">
+                                        <h4 className="text-xs font-bold text-green-600">Janji Temu</h4>
+                                        {dayAppointments.map((event, i) => (
+                                             <div key={i} className="text-xs p-2 bg-green-100 dark:bg-green-900/50 border-l-4 border-green-500 rounded-md">
+                                                <p className="font-semibold">{event.title}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                {daySchedules.length === 0 && dayAppointments.length === 0 && (
+                                    <p className="text-xs text-muted-foreground text-center pt-4">Tidak ada jadwal.</p>
+                                )}
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
