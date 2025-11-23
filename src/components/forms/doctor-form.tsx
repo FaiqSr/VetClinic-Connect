@@ -1,9 +1,10 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { useForm, useFieldArray } from "react-hook-form"
 import { z } from "zod"
 import { doc } from "firebase/firestore"
+import { PlusCircle, XCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -22,12 +23,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { useFirebase } from "@/firebase"
 import { setDocumentNonBlocking, initiateAnonymousSignIn, useUser } from "@/firebase"
 import { useEffect } from "react"
+import { Separator } from "../ui/separator"
+
+const scheduleSchema = z.object({
+  day: z.string().min(1, "Hari harus dipilih."),
+  startTime: z.string().min(1, "Jam mulai harus diisi."),
+  endTime: z.string().min(1, "Jam selesai harus diisi."),
+})
 
 const doctorFormSchema = z.object({
   id: z.string().min(1, "Kode dokter harus diisi. Gunakan User ID Anda jika masuk.").optional(),
@@ -35,10 +42,12 @@ const doctorFormSchema = z.object({
   gender: z.string({ required_error: "Jenis kelamin harus dipilih." }),
   address: z.string().min(1, "Alamat harus diisi."),
   phoneNumber: z.string().min(10, "Nomor HP minimal 10 digit.").max(15, "Nomor HP maksimal 15 digit."),
-  schedule: z.string().min(1, "Jadwal dokter harus diisi."),
+  schedule: z.array(scheduleSchema).min(1, "Minimal harus ada satu jadwal."),
 })
 
 type DoctorFormValues = z.infer<typeof doctorFormSchema>
+
+const daysOfWeek = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
 
 export default function DoctorForm() {
   const { toast } = useToast()
@@ -51,9 +60,14 @@ export default function DoctorForm() {
       name: "",
       address: "",
       phoneNumber: "",
-      schedule: "",
+      schedule: [{ day: "Senin", startTime: "09:00", endTime: "17:00" }],
     },
   })
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "schedule",
+  });
   
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -103,7 +117,7 @@ export default function DoctorForm() {
                   <FormItem>
                     <FormLabel>Kode Dokter</FormLabel>
                     <FormControl>
-                      <Input placeholder="Contoh: DR-001" {...field} disabled={!!user}/>
+                      <Input placeholder="Contoh: DR-001" {...field} disabled={!!user} value={field.value ?? ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -169,24 +183,87 @@ export default function DoctorForm() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="schedule"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Jadwal Dokter</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Contoh: Senin & Rabu (09:00 - 15:00), Jumat (10:00 - 17:00)"
-                        className="resize-y min-h-[100px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <FormLabel>Jadwal Dokter</FormLabel>
+              {fields.map((item, index) => (
+                <div key={item.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-4 border rounded-md relative">
+                    <FormField
+                      control={form.control}
+                      name={`schedule.${index}.day`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Hari</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih hari" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {daysOfWeek.map(day => <SelectItem key={day} value={day}>{day}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`schedule.${index}.startTime`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Jam Mulai</FormLabel>
+                          <FormControl>
+                            <Input type="time" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`schedule.${index}.endTime`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Jam Selesai</FormLabel>
+                          <FormControl>
+                            <Input type="time" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                     <Button type="button" variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => remove(index)}>
+                        <XCircle />
+                        <span className="sr-only">Hapus Jadwal</span>
+                      </Button>
+                </div>
+              ))}
+               <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                onClick={() => append({ day: "Senin", startTime: "09:00", endTime: "17:00" })}
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Tambah Jadwal
+              </Button>
+               <FormField
+                  control={form.control}
+                  name="schedule"
+                  render={() => (
+                     <FormItem>
+                        <FormMessage />
+                     </FormItem>
+                  )}
+               />
+            </div>
+            
             <CardFooter className="flex justify-end p-0 pt-6">
                 <Button type="submit" disabled={isUserLoading}>Simpan Data Dokter</Button>
             </CardFooter>
@@ -196,3 +273,4 @@ export default function DoctorForm() {
     </Card>
   )
 }
+    

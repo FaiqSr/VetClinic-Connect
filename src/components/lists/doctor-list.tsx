@@ -13,6 +13,13 @@ import {
 } from '@/components/ui/table';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
+import { Badge } from '../ui/badge';
+
+interface Schedule {
+  day: string;
+  startTime: string;
+  endTime: string;
+}
 
 interface Doctor {
   id: string;
@@ -20,22 +27,21 @@ interface Doctor {
   gender: string;
   address: string;
   phoneNumber: string;
-  schedule: string;
+  schedule: Schedule[];
 }
 
 export function DoctorList() {
   const { firestore } = useFirebase();
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading: isUserLoadingAuth } = useUser();
 
   const doctorsQuery = useMemoFirebase(() => {
-    // Wait for firestore and user to be available
     if (!firestore || !user) return null;
     return collection(firestore, 'doctors');
   }, [firestore, user]);
 
-  const { data: doctors, isLoading } = useCollection<Doctor>(doctorsQuery);
+  const { data: doctors, isLoading: isDoctorsLoading } = useCollection<Doctor>(doctorsQuery);
 
-  const displayLoading = isLoading || isUserLoading;
+  const displayLoading = isDoctorsLoading || isUserLoadingAuth;
 
   return (
     <Card>
@@ -82,7 +88,15 @@ export function DoctorList() {
                   <TableCell>{doctor.gender}</TableCell>
                   <TableCell>{doctor.address}</TableCell>
                   <TableCell>{doctor.phoneNumber}</TableCell>
-                  <TableCell>{doctor.schedule}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-2">
+                       {doctor.schedule?.map((s, index) => (
+                        <Badge key={index} variant="secondary" className="whitespace-nowrap">
+                          {s.day}: {s.startTime} - {s.endTime}
+                        </Badge>
+                      ))}
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
@@ -100,3 +114,4 @@ export function DoctorList() {
     </Card>
   );
 }
+    
