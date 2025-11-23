@@ -21,6 +21,8 @@ import {
   Bug,
   LifeBuoy,
   Settings,
+  Calendar,
+  List,
 } from "lucide-react"
 
 interface DashboardNavProps {
@@ -38,6 +40,8 @@ export function DashboardNav({ activeView, setActiveView }: DashboardNavProps) {
     { view: "doctor", label: "Data Dokter", icon: Stethoscope },
     { view: "medication", label: "Data Obat", icon: Pill },
     { view: "disease", label: "Data Penyakit", icon: Bug },
+    { view: "schedule", label: "Jadwal", icon: Calendar },
+    { view: "doctor-list", label: "Daftar Dokter", icon: List },
   ]
 
   return (

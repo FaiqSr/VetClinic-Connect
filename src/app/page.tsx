@@ -12,8 +12,10 @@ import DoctorForm from '@/components/forms/doctor-form';
 import MedicationForm from '@/components/forms/medication-form';
 import ExaminationForm from '@/components/forms/examination-form';
 import DiseaseForm from '@/components/forms/disease-form';
+import { DoctorList } from '@/components/lists/doctor-list';
+import { ScheduleCalendar } from '@/components/schedule-calendar';
 
-export type View = 'dashboard' | 'patient' | 'client' | 'status' | 'doctor' | 'medication' | 'examination' | 'disease';
+export type View = 'dashboard' | 'patient' | 'client' | 'status' | 'doctor' | 'medication' | 'examination' | 'disease' | 'schedule' | 'doctor-list';
 
 export default function Home() {
   const [activeView, setActiveView] = useState<View>('dashboard');
@@ -34,6 +36,10 @@ export default function Home() {
         return <ExaminationForm />;
       case 'disease':
         return <DiseaseForm />;
+      case 'schedule':
+        return <ScheduleCalendar />;
+      case 'doctor-list':
+        return <DoctorList />;
       case 'dashboard':
       default:
         return <DashboardWelcome />;
