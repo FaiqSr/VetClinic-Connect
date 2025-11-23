@@ -9,6 +9,8 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarSeparator,
+  SidebarGroup,
+  SidebarGroupLabel,
 } from "@/components/ui/sidebar"
 import {
   Activity,
@@ -31,8 +33,7 @@ interface DashboardNavProps {
 }
 
 export function DashboardNav({ activeView, setActiveView }: DashboardNavProps) {
-  const navItems = [
-    { view: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  const formItems = [
     { view: "patient", label: "Identitas Pasien", icon: PawPrint },
     { view: "client", label: "Identitas Klien", icon: Users },
     { view: "status", label: "Status Present", icon: Activity },
@@ -40,7 +41,9 @@ export function DashboardNav({ activeView, setActiveView }: DashboardNavProps) {
     { view: "doctor", label: "Data Dokter", icon: Stethoscope },
     { view: "medication", label: "Data Obat", icon: Pill },
     { view: "disease", label: "Data Penyakit", icon: Bug },
-    { view: "schedule", label: "Jadwal", icon: Calendar },
+  ];
+
+  const listItems = [
     { view: "doctor-list", label: "Daftar Dokter", icon: List },
     { view: "patient-list", label: "Daftar Pasien", icon: List },
     { view: "client-list", label: "Daftar Klien", icon: List },
@@ -60,19 +63,67 @@ export function DashboardNav({ activeView, setActiveView }: DashboardNavProps) {
       </SidebarHeader>
 
       <SidebarMenu>
-        {navItems.map((item) => (
-          <SidebarMenuItem key={item.view}>
+        <SidebarMenuItem>
             <SidebarMenuButton
-              onClick={() => setActiveView(item.view as View)}
-              isActive={activeView === item.view}
-              tooltip={item.label}
+              onClick={() => setActiveView("dashboard")}
+              isActive={activeView === "dashboard"}
+              tooltip="Dashboard"
             >
-              <item.icon />
-              <span>{item.label}</span>
+              <LayoutDashboard />
+              <span>Dashboard</span>
             </SidebarMenuButton>
-          </SidebarMenuItem>
-        ))}
+        </SidebarMenuItem>
+         <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => setActiveView("schedule")}
+              isActive={activeView === "schedule"}
+              tooltip="Jadwal"
+            >
+              <Calendar />
+              <span>Jadwal</span>
+            </SidebarMenuButton>
+        </SidebarMenuItem>
       </SidebarMenu>
+
+      <SidebarSeparator />
+
+      <SidebarGroup>
+        <SidebarGroupLabel>Form Entri Data</SidebarGroupLabel>
+        <SidebarMenu>
+          {formItems.map((item) => (
+            <SidebarMenuItem key={item.view}>
+              <SidebarMenuButton
+                onClick={() => setActiveView(item.view as View)}
+                isActive={activeView === item.view}
+                tooltip={item.label}
+              >
+                <item.icon />
+                <span>{item.label}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroup>
+
+      <SidebarSeparator />
+      
+      <SidebarGroup>
+        <SidebarGroupLabel>Tampilan Daftar</SidebarGroupLabel>
+        <SidebarMenu>
+          {listItems.map((item) => (
+            <SidebarMenuItem key={item.view}>
+              <SidebarMenuButton
+                onClick={() => setActiveView(item.view as View)}
+                isActive={activeView === item.view}
+                tooltip={item.label}
+              >
+                <item.icon />
+                <span>{item.label}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroup>
       
       <SidebarFooter className="mt-auto">
         <SidebarSeparator />

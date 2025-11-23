@@ -23,16 +23,16 @@ interface Medication {
 
 export function MedicationList() {
   const { firestore } = useFirebase();
-  const { user, isUserLoading: isUserLoadingAuth } = useUser();
+  const { isUserLoading } = useUser();
 
   const medicationsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore) return null;
     return collection(firestore, 'medications');
-  }, [firestore, user]);
+  }, [firestore]);
 
   const { data: medications, isLoading: isMedicationsLoading } = useCollection<Medication>(medicationsQuery);
 
-  const displayLoading = isMedicationsLoading || isUserLoadingAuth;
+  const displayLoading = isMedicationsLoading || isUserLoading;
 
   return (
     <Card>

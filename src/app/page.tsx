@@ -20,11 +20,18 @@ import { StatusList } from '@/components/lists/status-list';
 import { MedicationList } from '@/components/lists/medication-list';
 import { DiseaseList } from '@/components/lists/disease-list';
 import { ScheduleCalendar } from '@/components/schedule-calendar';
+import { useUser } from '@/firebase';
+import LoginForm from '@/components/forms/login-form';
+import RegisterForm from '@/components/forms/register-form';
+import { Spinner } from '@/components/ui/spinner';
 
 export type View = 'dashboard' | 'patient' | 'client' | 'status' | 'doctor' | 'medication' | 'examination' | 'disease' | 'schedule' | 'doctor-list' | 'patient-list' | 'client-list' | 'examination-list' | 'status-list' | 'medication-list' | 'disease-list';
+type AuthView = 'login' | 'register';
 
 export default function Home() {
+  const { user, isUserLoading } = useUser();
   const [activeView, setActiveView] = useState<View>('dashboard');
+  const [authView, setAuthView] = useState<AuthView>('login');
 
   const renderView = () => {
     switch (activeView) {
@@ -63,6 +70,26 @@ export default function Home() {
         return <DashboardWelcome />;
     }
   };
+
+  if (isUserLoading) {
+    return (
+      <div className="flex h-svh items-center justify-center">
+        <Spinner size="large" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex h-svh w-full items-center justify-center bg-background p-4">
+        {authView === 'login' ? (
+          <LoginForm onSwitchView={() => setAuthView('register')} />
+        ) : (
+          <RegisterForm onSwitchView={() => setAuthView('login')} />
+        )}
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>

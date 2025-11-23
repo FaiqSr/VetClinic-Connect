@@ -22,16 +22,16 @@ interface Disease {
 
 export function DiseaseList() {
   const { firestore } = useFirebase();
-  const { user, isUserLoading: isUserLoadingAuth } = useUser();
+  const { user, isUserLoading } = useUser();
 
   const diseasesQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore) return null;
     return collection(firestore, 'diseases');
-  }, [firestore, user]);
+  }, [firestore]);
 
   const { data: diseases, isLoading: isDiseasesLoading } = useCollection<Disease>(diseasesQuery);
 
-  const displayLoading = isDiseasesLoading || isUserLoadingAuth;
+  const displayLoading = isDiseasesLoading || isUserLoading;
 
   return (
     <Card>

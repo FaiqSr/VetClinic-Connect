@@ -5,6 +5,7 @@ import { useForm, useFieldArray } from "react-hook-form"
 import { z } from "zod"
 import { doc } from "firebase/firestore"
 import { PlusCircle, XCircle } from "lucide-react"
+import { useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -25,15 +26,13 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { useFirebase } from "@/firebase"
-import { setDocumentNonBlocking, initiateAnonymousSignIn, useUser } from "@/firebase"
-import { useEffect } from "react"
+import { useFirebase, setDocumentNonBlocking, useUser } from "@/firebase"
 import { Separator } from "../ui/separator"
 
 const scheduleSchema = z.object({
   day: z.string().min(1, "Hari harus dipilih."),
-  startTime: z.string().min(1, "Jam mulai harus diisi."),
-  endTime: z.string().min(1, "Jam selesai harus diisi."),
+  startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Format jam tidak valid."),
+  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Format jam tidak valid."),
 })
 
 const doctorFormSchema = z.object({
@@ -51,7 +50,7 @@ const daysOfWeek = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Mingg
 
 export default function DoctorForm() {
   const { toast } = useToast()
-  const { auth, firestore } = useFirebase()
+  const { firestore } = useFirebase()
   const { user, isUserLoading } = useUser();
 
   const form = useForm<DoctorFormValues>({
@@ -70,13 +69,10 @@ export default function DoctorForm() {
   });
   
   useEffect(() => {
-    if (!isUserLoading && !user) {
-      initiateAnonymousSignIn(auth);
-    }
      if (user) {
       form.setValue('id', user.uid);
     }
-  }, [isUserLoading, user, auth, form]);
+  }, [user, form]);
 
 
   function onSubmit(data: DoctorFormValues) {
@@ -84,18 +80,18 @@ export default function DoctorForm() {
         toast({
             variant: "destructive",
             title: "Error",
-            description: "Firestore atau pengguna belum siap.",
+            description: "Anda harus login untuk menyimpan data.",
         });
         return;
     }
 
-    const doctorId = data.id || user.uid;
+    const doctorId = user.uid;
     const doctorRef = doc(firestore, "doctors", doctorId);
     setDocumentNonBlocking(doctorRef, {...data, id: doctorId}, { merge: true });
 
     toast({
       title: "Data Dokter Tersimpan",
-      description: "Data dokter telah berhasil disimpan ke Firestore.",
+      description: "Data dokter telah berhasil disimpan atau diperbarui.",
     })
     form.reset();
   }
@@ -104,7 +100,7 @@ export default function DoctorForm() {
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle>Form Data Dokter</CardTitle>
-        <CardDescription>Masukkan detail informasi mengenai dokter yang praktek. Jika Anda masuk, ID Pengguna Anda akan digunakan sebagai Kode Dokter.</CardDescription>
+        <CardDescription>Masukkan atau perbarui detail informasi mengenai profil dokter Anda. ID Dokter Anda akan disetel secara otomatis.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -115,9 +111,9 @@ export default function DoctorForm() {
                 name="id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Kode Dokter</FormLabel>
+                    <FormLabel>ID Dokter (Otomatis)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Contoh: DR-001" {...field} disabled={!!user} value={field.value ?? ''} />
+                      <Input placeholder="ID Pengguna Anda" {...field} disabled value={field.value ?? ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -273,4 +269,3 @@ export default function DoctorForm() {
     </Card>
   )
 }
-    

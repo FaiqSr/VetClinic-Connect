@@ -28,7 +28,7 @@ interface PresentStatus {
 
 export function StatusList() {
   const { firestore } = useFirebase();
-  const { user, isUserLoading: isUserLoadingAuth } = useUser();
+  const { user, isUserLoading } = useUser();
 
   const statusesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -37,7 +37,7 @@ export function StatusList() {
 
   const { data: statuses, isLoading: isStatusesLoading } = useCollection<PresentStatus>(statusesQuery);
 
-  const displayLoading = isStatusesLoading || isUserLoadingAuth;
+  const displayLoading = isStatusesLoading || isUserLoading;
 
   return (
     <Card>

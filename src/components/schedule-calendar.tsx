@@ -41,16 +41,16 @@ const dayNameToNumber: { [key: string]: number } = {
 
 export function ScheduleCalendar() {
   const { firestore } = useFirebase();
-  const { user, isUserLoading: isUserLoadingAuth } = useUser();
+  const { user, isUserLoading } = useUser();
   const [appointmentEvents, setAppointmentEvents] = useState<CalendarEvent[]>([]);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(true);
   const { toast } = useToast();
 
   // Fetch doctors
   const doctorsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore) return null;
     return collection(firestore, 'doctors');
-  }, [firestore, user]);
+  }, [firestore]);
   const { data: doctors, isLoading: isLoadingDoctors } = useCollection<Doctor>(doctorsQuery);
 
   // Fetch appointments (clients and examinations)
@@ -187,7 +187,7 @@ export function ScheduleCalendar() {
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const selectedDayEvents = selectedDate ? eventsByDate[selectedDate.toDateString()] : [];
-  const displayLoading = isLoadingAppointments || isLoadingDoctors || isUserLoadingAuth;
+  const displayLoading = isLoadingAppointments || isLoadingDoctors || isUserLoading;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -248,4 +248,3 @@ export function ScheduleCalendar() {
     </div>
   );
 }
-    

@@ -26,19 +26,16 @@ interface Patient {
 
 export function PatientList() {
   const { firestore } = useFirebase();
-  const { user, isUserLoading: isUserLoadingAuth } = useUser();
+  const { user, isUserLoading } = useUser();
 
   const patientsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    // Querying the collection group 'patients' to get patients from all doctors for the current user.
-    // Assuming security rules allow this. For a per-doctor view, you would use:
-    // return collection(firestore, `doctors/${user.uid}/patients`);
     return collectionGroup(firestore, 'patients');
   }, [firestore, user]);
 
   const { data: patients, isLoading: isPatientsLoading } = useCollection<Patient>(patientsQuery);
 
-  const displayLoading = isPatientsLoading || isUserLoadingAuth;
+  const displayLoading = isPatientsLoading || isUserLoading;
 
   return (
     <Card>

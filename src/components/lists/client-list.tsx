@@ -26,7 +26,7 @@ interface Client {
 
 export function ClientList() {
   const { firestore } = useFirebase();
-  const { user, isUserLoading: isUserLoadingAuth } = useUser();
+  const { user, isUserLoading } = useUser();
 
   const clientsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -35,7 +35,7 @@ export function ClientList() {
 
   const { data: clients, isLoading: isClientsLoading } = useCollection<Client>(clientsQuery);
 
-  const displayLoading = isClientsLoading || isUserLoadingAuth;
+  const displayLoading = isClientsLoading || isUserLoading;
 
   return (
     <Card>

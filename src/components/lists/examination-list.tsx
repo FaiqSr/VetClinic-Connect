@@ -27,7 +27,7 @@ interface Examination {
 
 export function ExaminationList() {
   const { firestore } = useFirebase();
-  const { user, isUserLoading: isUserLoadingAuth } = useUser();
+  const { user, isUserLoading } = useUser();
 
   const examinationsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -36,7 +36,7 @@ export function ExaminationList() {
 
   const { data: examinations, isLoading: isExaminationsLoading } = useCollection<Examination>(examinationsQuery);
 
-  const displayLoading = isExaminationsLoading || isUserLoadingAuth;
+  const displayLoading = isExaminationsLoading || isUserLoading;
 
   return (
     <Card>

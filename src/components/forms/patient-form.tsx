@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { doc } from "firebase/firestore"
-import { useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -25,7 +24,7 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { useFirebase, setDocumentNonBlocking, useUser, initiateAnonymousSignIn } from "@/firebase"
+import { useFirebase, setDocumentNonBlocking, useUser } from "@/firebase"
 
 const patientFormSchema = z.object({
   id: z.string().min(1, "ID Pasien harus diisi."),
@@ -43,14 +42,8 @@ type PatientFormValues = z.infer<typeof patientFormSchema>
 
 export default function PatientForm() {
   const { toast } = useToast()
-  const { firestore, auth } = useFirebase();
+  const { firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
-
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      initiateAnonymousSignIn(auth);
-    }
-  }, [isUserLoading, user, auth]);
 
   const form = useForm<PatientFormValues>({
     resolver: zodResolver(patientFormSchema),
@@ -69,7 +62,7 @@ export default function PatientForm() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Firestore atau pengguna belum siap.",
+        description: "Anda harus login untuk menyimpan data.",
       });
       return;
     }

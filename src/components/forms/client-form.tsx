@@ -6,7 +6,6 @@ import { z } from "zod"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 import { doc } from "firebase/firestore"
-import { useEffect } from "react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -27,7 +26,7 @@ import {
 } from "@/components/ui/popover"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { useFirebase, setDocumentNonBlocking, useUser, initiateAnonymousSignIn } from "@/firebase"
+import { useFirebase, setDocumentNonBlocking, useUser } from "@/firebase"
 
 const clientFormSchema = z.object({
   id: z.string().min(1, "ID Klien harus diisi."),
@@ -46,14 +45,8 @@ type ClientFormValues = z.infer<typeof clientFormSchema>
 
 export default function ClientForm() {
   const { toast } = useToast()
-  const { firestore, auth } = useFirebase();
+  const { firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
-
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      initiateAnonymousSignIn(auth);
-    }
-  }, [isUserLoading, user, auth]);
 
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
@@ -72,7 +65,7 @@ export default function ClientForm() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Firestore atau pengguna belum siap.",
+        description: "Anda harus login untuk menyimpan data.",
       });
       return;
     }

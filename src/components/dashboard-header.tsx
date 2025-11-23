@@ -1,6 +1,6 @@
 "use client"
 
-import { Menu, UserCircle } from "lucide-react"
+import { Menu, UserCircle, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -11,9 +11,31 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { SidebarTrigger, useSidebar } from "./ui/sidebar"
+import { useAuth } from "@/firebase"
+import { signOut } from "firebase/auth"
+import { useToast } from "@/hooks/use-toast"
 
 export function DashboardHeader() {
   const { isMobile } = useSidebar()
+  const auth = useAuth();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({
+        title: "Logout Berhasil",
+        description: "Anda telah berhasil keluar.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Logout Gagal",
+        description: "Terjadi kesalahan saat mencoba keluar.",
+      });
+    }
+  };
+
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
       {isMobile && <SidebarTrigger asChild><Button variant="outline" size="icon"><Menu/></Button></SidebarTrigger>}
@@ -32,7 +54,10 @@ export function DashboardHeader() {
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuItem>Support</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Logout</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Logout</span>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { doc } from "firebase/firestore"
-import { useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -19,7 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { useFirebase, setDocumentNonBlocking, useUser, initiateAnonymousSignIn } from "@/firebase"
+import { useFirebase, setDocumentNonBlocking, useUser } from "@/firebase"
 
 const diseaseFormSchema = z.object({
   id: z.string().min(1, "Kode penyakit harus diisi."),
@@ -31,14 +30,8 @@ type DiseaseFormValues = z.infer<typeof diseaseFormSchema>
 
 export default function DiseaseForm() {
   const { toast } = useToast()
-  const { firestore, auth } = useFirebase();
+  const { firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
-
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      initiateAnonymousSignIn(auth);
-    }
-  }, [isUserLoading, user, auth]);
 
   const form = useForm<DiseaseFormValues>({
     resolver: zodResolver(diseaseFormSchema),
@@ -53,8 +46,8 @@ export default function DiseaseForm() {
     if (!firestore || !user) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Firestore atau pengguna belum siap.",
+        title: "Akses Ditolak",
+        description: "Anda harus login sebagai admin untuk menyimpan data penyakit.",
       });
       return;
     }

@@ -28,7 +28,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { useFirebase, addDocumentNonBlocking, useUser, initiateAnonymousSignIn } from "@/firebase"
+import { useFirebase, addDocumentNonBlocking, useUser } from "@/firebase"
 
 const examinationFormSchema = z.object({
   date: z.date({
@@ -45,7 +45,7 @@ type ExaminationFormValues = z.infer<typeof examinationFormSchema>
 
 export default function ExaminationForm() {
   const { toast } = useToast()
-  const { firestore, auth } = useFirebase();
+  const { firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
 
  const form = useForm<ExaminationFormValues>({
@@ -60,13 +60,10 @@ export default function ExaminationForm() {
   })
 
  useEffect(() => {
-    if (!isUserLoading && !user) {
-      initiateAnonymousSignIn(auth);
-    }
     if (user) {
         form.setValue('doctorId', user.uid);
     }
-  }, [isUserLoading, user, auth, form]);
+  }, [user, form]);
 
 
   function onSubmit(data: ExaminationFormValues) {
@@ -74,12 +71,12 @@ export default function ExaminationForm() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Firestore atau pengguna belum siap.",
+        description: "Anda harus login untuk menyimpan data.",
       });
       return;
     }
     
-    const doctorId = data.doctorId || user.uid;
+    const doctorId = user.uid;
     const examinationColRef = collection(firestore, `doctors/${doctorId}/patients/${data.patientId}/examinations`);
     
     const dataToSave = {
@@ -154,7 +151,7 @@ export default function ExaminationForm() {
                   <FormItem>
                     <FormLabel>Kode Dokter</FormLabel>
                     <FormControl>
-                      <Input placeholder="Contoh: DR-001" {...field} value={field.value || ''} disabled={!!user}/>
+                      <Input placeholder="Contoh: DR-001" {...field} value={field.value ?? ''} disabled/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
