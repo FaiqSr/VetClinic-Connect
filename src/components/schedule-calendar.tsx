@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { collectionGroup, getDocs } from 'firebase/firestore';
+import { useState, useMemo, useEffect } from 'react';
+import { collectionGroup, onSnapshot, QuerySnapshot, DocumentData, Unsubscribe, FirestoreError } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { errorEmitter, FirestorePermissionError } from '@/firebase';
 
 interface CalendarEvent {
   date: Date;
@@ -21,53 +22,78 @@ export function ScheduleCalendar() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  useMemo(async () => {
+  useEffect(() => {
     if (!firestore) return;
+
     setIsLoading(true);
-    try {
-      const clientQuery = collectionGroup(firestore, 'clients');
-      const examQuery = collectionGroup(firestore, 'examinations');
+    const unsubscribes: Unsubscribe[] = [];
 
-      const [clientSnapshot, examSnapshot] = await Promise.all([
-        getDocs(clientQuery),
-        getDocs(examQuery),
-      ]);
-
+    const processSnapshot = (snapshot: QuerySnapshot<DocumentData>, type: 'visit' | 'exam') => {
       const fetchedEvents: CalendarEvent[] = [];
-
-      clientSnapshot.forEach((doc) => {
+      snapshot.forEach((doc) => {
         const data = doc.data();
-        if (data.visitDate) {
+        const dateKey = type === 'visit' ? 'visitDate' : 'date';
+        if (data[dateKey]) {
           fetchedEvents.push({
-            date: new Date(data.visitDate),
-            title: `Kunjungan: ${data.name}`,
-            type: 'visit',
+            date: new Date(data[dateKey]),
+            title: type === 'visit' ? `Kunjungan: ${data.name}` : `Pemeriksaan Pasien: ${data.patientId}`,
+            type: type,
           });
         }
       });
+      return fetchedEvents;
+    };
+    
+    const handleError = (error: FirestoreError, path: string) => {
+        console.error(`Error fetching ${path} data:`, error);
+        const contextualError = new FirestorePermissionError({
+            operation: 'list',
+            path: path
+        });
+        errorEmitter.emit('permission-error', contextualError);
+        toast({
+            variant: 'destructive',
+            title: `Gagal memuat data ${path}`,
+            description: 'Anda tidak memiliki izin untuk melihat data ini.',
+        });
+    };
 
-      examSnapshot.forEach((doc) => {
-        const data = doc.data();
-        if (data.date) {
-          fetchedEvents.push({
-            date: new Date(data.date),
-            title: `Pemeriksaan Pasien: ${data.patientId}`,
-            type: 'exam',
-          });
+    const clientQuery = collectionGroup(firestore, 'clients');
+    const examQuery = collectionGroup(firestore, 'examinations');
+    
+    let clientEvents: CalendarEvent[] = [];
+    let examEvents: CalendarEvent[] = [];
+
+    const clientUnsubscribe = onSnapshot(clientQuery, 
+        (snapshot) => {
+            clientEvents = processSnapshot(snapshot, 'visit');
+            setEvents([...clientEvents, ...examEvents]);
+            setIsLoading(false);
+        },
+        (error) => {
+            handleError(error, 'clients');
+            setIsLoading(false);
         }
-      });
+    );
+    unsubscribes.push(clientUnsubscribe);
 
-      setEvents(fetchedEvents);
-    } catch (error) {
-      console.error('Error fetching schedule data:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Gagal memuat data jadwal',
-        description: 'Terjadi kesalahan saat mengambil data dari Firestore.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    const examUnsubscribe = onSnapshot(examQuery, 
+        (snapshot) => {
+            examEvents = processSnapshot(snapshot, 'exam');
+            setEvents([...clientEvents, ...examEvents]);
+            setIsLoading(false);
+        },
+        (error) => {
+            handleError(error, 'examinations');
+            setIsLoading(false);
+        }
+    );
+    unsubscribes.push(examUnsubscribe);
+
+
+    return () => {
+      unsubscribes.forEach(unsub => unsub());
+    };
   }, [firestore, toast]);
   
   const eventsByDate = useMemo(() => {
