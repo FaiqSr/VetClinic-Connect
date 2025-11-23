@@ -16,10 +16,6 @@ Fitur utama:
 - Panel administrasi untuk klinik (kelola dokter, jadwal, layanan)
 - API yang dapat diintegrasikan dengan frontend dan/atau aplikasi mobile
 
-Screenshot
-- Tambahkan screenshot aplikasi di folder `docs/screenshots` dan referensikan di sini:
-  - `docs/screenshots/landing.png`
-  - `docs/screenshots/dashboard.png`
 
 Teknologi (contoh — sesuaikan dengan implementasi proyek)
 - Backend: Node.js, Express (atau Django / Laravel / dll)
