@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { collectionGroup, onSnapshot, QuerySnapshot, DocumentData, Unsubscribe, FirestoreError } from 'firebase/firestore';
-import { useFirebase } from '@/firebase';
+import { useFirebase, useUser } from '@/firebase';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,12 +18,13 @@ interface CalendarEvent {
 
 export function ScheduleCalendar() {
   const { firestore } = useFirebase();
+  const { user, isUserLoading } = useUser();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!firestore) return;
+    if (!firestore || !user) return;
 
     setIsLoading(true);
     const unsubscribes: Unsubscribe[] = [];
@@ -94,7 +95,7 @@ export function ScheduleCalendar() {
     return () => {
       unsubscribes.forEach(unsub => unsub());
     };
-  }, [firestore, toast]);
+  }, [firestore, toast, user]);
   
   const eventsByDate = useMemo(() => {
     return events.reduce((acc, event) => {
@@ -130,12 +131,13 @@ export function ScheduleCalendar() {
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const selectedDayEvents = selectedDate ? eventsByDate[selectedDate.toDateString()] : [];
+  const displayLoading = isLoading || isUserLoading;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <Card className="lg:col-span-2">
         <CardContent className="p-0">
-          {isLoading ? (
+          {displayLoading ? (
             <div className="p-6">
                 <Skeleton className="w-full h-[300px]" />
             </div>
@@ -160,7 +162,7 @@ export function ScheduleCalendar() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-            {isLoading ? (
+            {displayLoading ? (
                  <div className="space-y-4">
                     <Skeleton className="h-10 w-full" />
                     <Skeleton className="h-10 w-full" />

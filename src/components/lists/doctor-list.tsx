@@ -1,7 +1,7 @@
 'use client';
 
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { useFirebase, useMemoFirebase } from '@/firebase';
+import { useFirebase, useMemoFirebase, useUser } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import {
   Table,
@@ -25,13 +25,17 @@ interface Doctor {
 
 export function DoctorList() {
   const { firestore } = useFirebase();
+  const { user, isUserLoading } = useUser();
 
   const doctorsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    // Wait for firestore and user to be available
+    if (!firestore || !user) return null;
     return collection(firestore, 'doctors');
-  }, [firestore]);
+  }, [firestore, user]);
 
   const { data: doctors, isLoading } = useCollection<Doctor>(doctorsQuery);
+
+  const displayLoading = isLoading || isUserLoading;
 
   return (
     <Card>
@@ -51,7 +55,7 @@ export function DoctorList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading &&
+            {displayLoading &&
               Array.from({ length: 3 }).map((_, i) => (
                 <TableRow key={i}>
                   <TableCell>
@@ -71,7 +75,7 @@ export function DoctorList() {
                   </TableCell>
                 </TableRow>
               ))}
-            {!isLoading && doctors && doctors.length > 0 ? (
+            {!displayLoading && doctors && doctors.length > 0 ? (
               doctors.map((doctor) => (
                 <TableRow key={doctor.id}>
                   <TableCell className="font-medium">{doctor.name}</TableCell>
@@ -82,7 +86,7 @@ export function DoctorList() {
                 </TableRow>
               ))
             ) : (
-              !isLoading && (
+              !displayLoading && (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center">
                     Tidak ada data dokter.
