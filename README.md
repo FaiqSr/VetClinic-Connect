@@ -1,4 +1,4 @@
-# VetClinic-Connect
+# VetClinic-Connect Made By Firebase Studio
 
 [![Project Status](https://img.shields.io/badge/status-active-brightgreen.svg)](https://github.com/FaiqSr/VetClinic-Connect)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
