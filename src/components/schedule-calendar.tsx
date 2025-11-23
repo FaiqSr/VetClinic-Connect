@@ -46,7 +46,6 @@ export function ScheduleCalendar() {
     };
     
     const handleError = (error: FirestoreError, path: string) => {
-        console.error(`Error fetching ${path} data:`, error);
         const contextualError = new FirestorePermissionError({
             operation: 'list',
             path: path
