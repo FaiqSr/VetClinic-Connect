@@ -61,16 +61,38 @@ service cloud.firestore {
     }
 
     // ---------------------------
+    // Collection Group Rules
+    // ---------------------------
+    
+    /**
+     * @description Allows any authenticated user to list clients across all doctors for the calendar view.
+     * @path /{path=**}/clients/{clientId}
+     * @principle Separation of concerns: Allows broad read for UI features while keeping write access restricted.
+     */
+    match /{path=**}/clients/{clientId} {
+      allow list: if request.auth != null;
+    }
+
+    /**
+     * @description Allows any authenticated user to list examinations across all doctors for the calendar view.
+     * @path /{path=**}/examinations/{examinationId}
+     * @principle Separation of concerns: Allows broad read for UI features while keeping write access restricted.
+     */
+    match /{path=**}/examinations/{examinationId} {
+        allow list: if request.auth != null;
+    }
+    
+    // ---------------------------
     // Collection Rules
     // ---------------------------
 
     /**
      * @description Controls access to doctor profiles. A doctor can create their own profile,
-     *              and only they can read, update, or delete it.
+     *              and only they can read, update, or delete it. Listing doctors is allowed for any authenticated user.
      * @path /doctors/{doctorId}
-     * @allow (create) An authenticated user (uid: 'doctor_abc') creates their own profile at '/doctors/doctor_abc'.
+     * @allow (get) An authenticated user (uid: 'doctor_abc') creates their own profile at '/doctors/doctor_abc'.
      * @deny  (get) A user ('doctor_xyz') tries to read the profile of another doctor at '/doctors/doctor_abc'.
-     * @principle Enforces strict document ownership and self-creation for user profiles.
+     * @principle Enforces strict document ownership and self-creation for user profiles, but allows listing.
      */
     match /doctors/{doctorId} {
       allow get: if isOwner(doctorId);
@@ -78,15 +100,6 @@ service cloud.firestore {
       allow create: if isOwner(doctorId) && request.resource.data.id == doctorId;
       allow update: if isExistingOwner(doctorId);
       allow delete: if isExistingOwner(doctorId);
-      
-      match /{path=**}/clients/{clientId} {
-        allow list: if request.auth != null;
-      }
-
-      match /{path=**}/examinations/{examinationId} {
-          allow list: if request.auth != null;
-      }
-
 
       /**
        * @description Controls access to patient records, which are owned by a specific doctor.
@@ -111,7 +124,7 @@ service cloud.firestore {
          */
         match /clients/{clientId} {
           allow get: if isOwner(doctorId);
-          allow list: if isOwner(doctorId);
+          // allow list is handled by the collection group rule above.
           allow create: if isOwner(doctorId);
           allow update: if isExistingOwner(doctorId);
           allow delete: if isExistingOwner(doctorId);
@@ -141,7 +154,7 @@ service cloud.firestore {
          */
         match /examinations/{examinationId} {
           allow get: if isOwner(doctorId);
-          allow list: if isOwner(doctorId);
+           // allow list is handled by the collection group rule above.
           allow create: if isOwner(doctorId);
           allow update: if isExistingOwner(doctorId);
           allow delete: if isExistingOwner(doctorId);
