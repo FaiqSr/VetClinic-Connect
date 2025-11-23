@@ -5,6 +5,8 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
+import { collection, doc } from "firebase/firestore"
+import { useEffect } from "react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -25,12 +27,13 @@ import {
 } from "@/components/ui/popover"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { useFirebase, setDocumentNonBlocking, useUser, initiateAnonymousSignIn } from "@/firebase"
 
 const clientFormSchema = z.object({
-  clientId: z.string().min(1, "ID Klien harus diisi."),
+  id: z.string().min(1, "ID Klien harus diisi."),
   name: z.string().min(1, "Nama Klien harus diisi."),
   address: z.string().min(1, "Alamat harus diisi."),
-  phone: z.string().min(10, "Nomor HP minimal 10 digit.").max(15, "Nomor HP maksimal 15 digit."),
+  phoneNumber: z.string().min(10, "Nomor HP minimal 10 digit.").max(15, "Nomor HP maksimal 15 digit."),
   visitDate: z.date({
     required_error: "Tanggal kunjungan harus diisi.",
   }),
@@ -41,26 +44,48 @@ type ClientFormValues = z.infer<typeof clientFormSchema>
 
 export default function ClientForm() {
   const { toast } = useToast()
+  const { firestore, auth } = useFirebase();
+  const { user, isUserLoading } = useUser();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [isUserLoading, user, auth]);
 
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
     defaultValues: {
-      clientId: "",
+      id: "",
       name: "",
       address: "",
-      phone: "",
+      phoneNumber: "",
       responsiblePerson: "",
     },
   })
 
   function onSubmit(data: ClientFormValues) {
+     if (!firestore || !user) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Firestore atau pengguna belum siap.",
+      });
+      return;
+    }
+
+    // This is a simplification. In a real app, you'd associate this
+    // with a specific patient and doctor.
+    const clientRef = doc(collection(firestore, "clients"), data.id);
+    const dataToSave = {
+        ...data,
+        visitDate: data.visitDate.toISOString(),
+    };
+    setDocumentNonBlocking(clientRef, dataToSave, { merge: true });
+
     toast({
       title: "Data Klien Tersimpan",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
+      description: "Data klien telah berhasil disimpan ke Firestore.",
     })
   }
 
@@ -76,7 +101,7 @@ export default function ClientForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <FormField
                 control={form.control}
-                name="clientId"
+                name="id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>ID Klien</FormLabel>
@@ -115,7 +140,7 @@ export default function ClientForm() {
               />
               <FormField
                 control={form.control}
-                name="phone"
+                name="phoneNumber"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>No. HP</FormLabel>
@@ -182,7 +207,7 @@ export default function ClientForm() {
               />
             </div>
             <CardFooter className="flex justify-end p-0 pt-6">
-                <Button type="submit">Simpan Data Klien</Button>
+                <Button type="submit" disabled={isUserLoading}>Simpan Data Klien</Button>
             </CardFooter>
           </form>
         </Form>

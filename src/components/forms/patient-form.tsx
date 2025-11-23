@@ -3,6 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
+import { collection, doc } from "firebase/firestore"
+import { useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -23,9 +25,10 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { useFirebase, setDocumentNonBlocking, useUser, initiateAnonymousSignIn } from "@/firebase"
 
 const patientFormSchema = z.object({
-  patientId: z.string().min(1, "ID Pasien harus diisi."),
+  id: z.string().min(1, "ID Pasien harus diisi."),
   name: z.string().min(1, "Nama pasien harus diisi."),
   breed: z.string().min(1, "Ras harus diisi."),
   species: z.string().min(1, "Jenis hewan harus diisi."),
@@ -40,11 +43,19 @@ type PatientFormValues = z.infer<typeof patientFormSchema>
 
 export default function PatientForm() {
   const { toast } = useToast()
+  const { firestore, auth } = useFirebase();
+  const { user, isUserLoading } = useUser();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [isUserLoading, user, auth]);
 
   const form = useForm<PatientFormValues>({
     resolver: zodResolver(patientFormSchema),
     defaultValues: {
-      patientId: "",
+      id: "",
       name: "",
       breed: "",
       species: "",
@@ -54,13 +65,22 @@ export default function PatientForm() {
   })
 
   function onSubmit(data: PatientFormValues) {
+    if (!firestore || !user) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Firestore atau pengguna belum siap.",
+      });
+      return;
+    }
+    
+    // This is a simplification. In a real app, you'd need to select a doctor first.
+    const patientRef = doc(collection(firestore, `doctors/${user.uid}/patients`), data.id);
+    setDocumentNonBlocking(patientRef, data, { merge: true });
+
     toast({
       title: "Data Pasien Tersimpan",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
+      description: "Data pasien telah berhasil disimpan ke Firestore.",
     })
   }
 
@@ -76,7 +96,7 @@ export default function PatientForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <FormField
                 control={form.control}
-                name="patientId"
+                name="id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>ID Pasien (Kode Pasien)</FormLabel>
@@ -175,7 +195,7 @@ export default function PatientForm() {
               />
             </div>
             <CardFooter className="flex justify-end p-0 pt-6">
-                <Button type="submit">Simpan Data Pasien</Button>
+                <Button type="submit" disabled={isUserLoading}>Simpan Data Pasien</Button>
             </CardFooter>
           </form>
         </Form>

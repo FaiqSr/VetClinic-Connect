@@ -3,6 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
+import { collection } from "firebase/firestore"
+import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -17,8 +19,10 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { useFirebase, addDocumentNonBlocking, useUser, initiateAnonymousSignIn } from "@/firebase"
 
 const statusFormSchema = z.object({
+  patientId: z.string().min(1, "ID Pasien harus diisi."),
   actions: z.string().min(1, "Tindakan harus diisi."),
   behavior: z.string().min(1, "Tingkah laku harus diisi."),
   hydration: z.string().min(1, "Status hidrasi harus diisi."),
@@ -32,10 +36,19 @@ type StatusFormValues = z.infer<typeof statusFormSchema>
 
 export default function StatusForm() {
   const { toast } = useToast()
+  const { firestore, auth } = useFirebase();
+  const { user, isUserLoading } = useUser();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [isUserLoading, user, auth]);
 
   const form = useForm<StatusFormValues>({
     resolver: zodResolver(statusFormSchema),
     defaultValues: {
+      patientId: "",
       actions: "",
       behavior: "",
       hydration: "",
@@ -44,13 +57,22 @@ export default function StatusForm() {
   })
 
   function onSubmit(data: StatusFormValues) {
+    if (!firestore || !user) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Firestore atau pengguna belum siap.",
+      });
+      return;
+    }
+
+    // This is a simplification. In a real app, you'd associate this with a specific doctor.
+    const statusRef = collection(firestore, `doctors/${user.uid}/patients/${data.patientId}/presentStatuses`);
+    addDocumentNonBlocking(statusRef, data);
+
     toast({
       title: "Data Status Present Tersimpan",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
+      description: "Data status telah berhasil disimpan ke Firestore.",
     })
   }
 
@@ -63,6 +85,19 @@ export default function StatusForm() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+             <FormField
+                control={form.control}
+                name="patientId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ID Pasien</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Masukkan ID Pasien" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               <FormField
                 control={form.control}
@@ -159,7 +194,7 @@ export default function StatusForm() {
               />
             </div>
             <CardFooter className="flex justify-end p-0 pt-6">
-                <Button type="submit">Simpan Data Status</Button>
+                <Button type="submit" disabled={isUserLoading}>Simpan Data Status</Button>
             </CardFooter>
           </form>
         </Form>

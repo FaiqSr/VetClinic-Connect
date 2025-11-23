@@ -3,6 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
+import { collection, doc } from "firebase/firestore"
+import { useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -23,11 +25,12 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { useFirebase, setDocumentNonBlocking, useUser, initiateAnonymousSignIn } from "@/firebase"
 
 const medicationFormSchema = z.object({
-  medicationCode: z.string().min(1, "Kode obat harus diisi."),
-  medicationType: z.string({ required_error: "Jenis obat harus dipilih." }),
-  medicationName: z.string().min(1, "Nama obat harus diisi."),
+  id: z.string().min(1, "Kode obat harus diisi."),
+  type: z.string({ required_error: "Jenis obat harus dipilih." }),
+  name: z.string().min(1, "Nama obat harus diisi."),
   price: z.coerce.number().min(0, "Harga tidak boleh negatif."),
 })
 
@@ -35,24 +38,40 @@ type MedicationFormValues = z.infer<typeof medicationFormSchema>
 
 export default function MedicationForm() {
   const { toast } = useToast()
+  const { firestore, auth } = useFirebase();
+  const { user, isUserLoading } = useUser();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [isUserLoading, user, auth]);
 
   const form = useForm<MedicationFormValues>({
     resolver: zodResolver(medicationFormSchema),
     defaultValues: {
-      medicationCode: "",
-      medicationName: "",
+      id: "",
+      name: "",
       price: 0,
     },
   })
 
   function onSubmit(data: MedicationFormValues) {
+    if (!firestore || !user) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Firestore atau pengguna belum siap.",
+      });
+      return;
+    }
+
+    const medicationRef = doc(collection(firestore, "medications"), data.id);
+    setDocumentNonBlocking(medicationRef, data, { merge: true });
+
     toast({
       title: "Data Obat Tersimpan",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
+      description: "Data obat telah berhasil disimpan ke Firestore.",
     })
   }
 
@@ -68,7 +87,7 @@ export default function MedicationForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <FormField
                 control={form.control}
-                name="medicationCode"
+                name="id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Kode Obat</FormLabel>
@@ -81,7 +100,7 @@ export default function MedicationForm() {
               />
               <FormField
                 control={form.control}
-                name="medicationName"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Nama Obat</FormLabel>
@@ -94,7 +113,7 @@ export default function MedicationForm() {
               />
               <FormField
                 control={form.control}
-                name="medicationType"
+                name="type"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Jenis Obat</FormLabel>
@@ -132,7 +151,7 @@ export default function MedicationForm() {
               />
             </div>
             <CardFooter className="flex justify-end p-0 pt-6">
-                <Button type="submit">Simpan Data Obat</Button>
+                <Button type="submit" disabled={isUserLoading}>Simpan Data Obat</Button>
             </CardFooter>
           </form>
         </Form>

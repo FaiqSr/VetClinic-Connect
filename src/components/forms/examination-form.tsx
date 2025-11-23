@@ -5,6 +5,8 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
+import { collection, doc } from "firebase/firestore"
+import { useEffect } from "react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -26,14 +28,15 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { useFirebase, addDocumentNonBlocking, useUser, initiateAnonymousSignIn } from "@/firebase"
 
 const examinationFormSchema = z.object({
-  examDate: z.date({
+  date: z.date({
     required_error: "Tanggal periksa harus diisi.",
   }),
-  doctorCode: z.string().min(1, "Kode dokter harus diisi."),
-  patientCode: z.string().min(1, "Kode pasien harus diisi."),
-  diseaseCode: z.string().min(1, "Kode penyakit harus diisi."),
+  doctorId: z.string().min(1, "Kode dokter harus diisi."),
+  patientId: z.string().min(1, "Kode pasien harus diisi."),
+  diseaseId: z.string().min(1, "Kode penyakit harus diisi."),
   complaints: z.string().min(1, "Keluhan harus diisi."),
   diagnosis: z.string().min(1, "Diagnosis harus diisi."),
 })
@@ -42,26 +45,47 @@ type ExaminationFormValues = z.infer<typeof examinationFormSchema>
 
 export default function ExaminationForm() {
   const { toast } = useToast()
+  const { firestore, auth } = useFirebase();
+  const { user, isUserLoading } = useUser();
+
+ useEffect(() => {
+    if (!isUserLoading && !user) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [isUserLoading, user, auth]);
 
   const form = useForm<ExaminationFormValues>({
     resolver: zodResolver(examinationFormSchema),
     defaultValues: {
-      doctorCode: "",
-      patientCode: "",
-      diseaseCode: "",
+      doctorId: "",
+      patientId: "",
+      diseaseId: "",
       complaints: "",
       diagnosis: "",
     },
   })
 
   function onSubmit(data: ExaminationFormValues) {
+     if (!firestore || !user) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Firestore atau pengguna belum siap.",
+      });
+      return;
+    }
+    
+    // In a real app, this would be a subcollection of a patient
+    const examinationRef = collection(firestore, `doctors/${data.doctorId}/patients/${data.patientId}/examinations`);
+    const dataToSave = {
+        ...data,
+        date: data.date.toISOString(),
+    };
+    addDocumentNonBlocking(examinationRef, dataToSave);
+
     toast({
       title: "Data Pemeriksaan Tersimpan",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
+      description: "Data pemeriksaan telah berhasil disimpan ke Firestore.",
     })
   }
 
@@ -77,7 +101,7 @@ export default function ExaminationForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <FormField
                 control={form.control}
-                name="examDate"
+                name="date"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Tanggal Periksa</FormLabel>
@@ -118,7 +142,7 @@ export default function ExaminationForm() {
               />
               <FormField
                 control={form.control}
-                name="doctorCode"
+                name="doctorId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Kode Dokter</FormLabel>
@@ -131,7 +155,7 @@ export default function ExaminationForm() {
               />
               <FormField
                 control={form.control}
-                name="patientCode"
+                name="patientId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Kode Pasien</FormLabel>
@@ -144,7 +168,7 @@ export default function ExaminationForm() {
               />
               <FormField
                 control={form.control}
-                name="diseaseCode"
+                name="diseaseId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Kode Penyakit</FormLabel>
@@ -191,7 +215,7 @@ export default function ExaminationForm() {
               />
             </div>
             <CardFooter className="flex justify-end p-0 pt-6">
-                <Button type="submit">Simpan Hasil Pemeriksaan</Button>
+                <Button type="submit" disabled={isUserLoading}>Simpan Hasil Pemeriksaan</Button>
             </CardFooter>
           </form>
         </Form>

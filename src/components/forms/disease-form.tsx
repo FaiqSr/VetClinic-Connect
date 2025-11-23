@@ -3,6 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
+import { collection, doc } from "firebase/firestore"
+import { useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -17,10 +19,11 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { useFirebase, setDocumentNonBlocking, useUser, initiateAnonymousSignIn } from "@/firebase"
 
 const diseaseFormSchema = z.object({
-  diseaseCode: z.string().min(1, "Kode penyakit harus diisi."),
-  diseaseName: z.string().min(1, "Nama penyakit harus diisi."),
+  id: z.string().min(1, "Kode penyakit harus diisi."),
+  name: z.string().min(1, "Nama penyakit harus diisi."),
   description: z.string().min(1, "Keterangan harus diisi."),
 })
 
@@ -28,24 +31,40 @@ type DiseaseFormValues = z.infer<typeof diseaseFormSchema>
 
 export default function DiseaseForm() {
   const { toast } = useToast()
+  const { firestore, auth } = useFirebase();
+  const { user, isUserLoading } = useUser();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [isUserLoading, user, auth]);
 
   const form = useForm<DiseaseFormValues>({
     resolver: zodResolver(diseaseFormSchema),
     defaultValues: {
-      diseaseCode: "",
-      diseaseName: "",
+      id: "",
+      name: "",
       description: "",
     },
   })
 
   function onSubmit(data: DiseaseFormValues) {
+    if (!firestore || !user) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Firestore atau pengguna belum siap.",
+      });
+      return;
+    }
+
+    const diseaseRef = doc(collection(firestore, "diseases"), data.id);
+    setDocumentNonBlocking(diseaseRef, data, { merge: true });
+
     toast({
       title: "Data Penyakit Tersimpan",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
+      description: "Data penyakit telah berhasil disimpan ke Firestore.",
     })
   }
 
@@ -61,7 +80,7 @@ export default function DiseaseForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <FormField
                 control={form.control}
-                name="diseaseCode"
+                name="id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Kode Penyakit</FormLabel>
@@ -74,7 +93,7 @@ export default function DiseaseForm() {
               />
               <FormField
                 control={form.control}
-                name="diseaseName"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Nama Penyakit</FormLabel>
@@ -104,7 +123,7 @@ export default function DiseaseForm() {
               />
             </div>
             <CardFooter className="flex justify-end p-0 pt-6">
-                <Button type="submit">Simpan Data Penyakit</Button>
+                <Button type="submit" disabled={isUserLoading}>Simpan Data Penyakit</Button>
             </CardFooter>
           </form>
         </Form>
