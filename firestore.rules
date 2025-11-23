@@ -139,6 +139,15 @@ service cloud.firestore {
         }
       }
     }
+    
+    match /{path=**}/clients/{clientId} {
+      allow list: if request.auth != null;
+    }
+
+    match /{path=**}/examinations/{examinationId} {
+        allow list: if request.auth != null;
+    }
+
 
     /**
      * @description Manages the global list of medications. This data is public to read
