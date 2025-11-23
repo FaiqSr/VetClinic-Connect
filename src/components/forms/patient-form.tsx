@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { collection, doc } from "firebase/firestore"
+import { doc } from "firebase/firestore"
 import { useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -74,14 +74,15 @@ export default function PatientForm() {
       return;
     }
     
-    // This is a simplification. In a real app, you'd need to select a doctor first.
-    const patientRef = doc(collection(firestore, `doctors/${user.uid}/patients`), data.id);
+    // Correct path based on firestore.rules
+    const patientRef = doc(firestore, `doctors/${user.uid}/patients`, data.id);
     setDocumentNonBlocking(patientRef, data, { merge: true });
 
     toast({
       title: "Data Pasien Tersimpan",
       description: "Data pasien telah berhasil disimpan ke Firestore.",
     })
+    form.reset();
   }
 
   return (

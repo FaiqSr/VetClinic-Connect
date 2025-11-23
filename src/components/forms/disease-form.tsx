@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { collection, doc } from "firebase/firestore"
+import { doc } from "firebase/firestore"
 import { useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -59,13 +59,14 @@ export default function DiseaseForm() {
       return;
     }
 
-    const diseaseRef = doc(collection(firestore, "diseases"), data.id);
+    const diseaseRef = doc(firestore, "diseases", data.id);
     setDocumentNonBlocking(diseaseRef, data, { merge: true });
 
     toast({
       title: "Data Penyakit Tersimpan",
       description: "Data penyakit telah berhasil disimpan ke Firestore.",
     })
+    form.reset();
   }
 
   return (

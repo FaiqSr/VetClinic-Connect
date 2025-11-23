@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
-import { collection, doc } from "firebase/firestore"
 import { useEffect } from "react"
 
 import { cn } from "@/lib/utils"
@@ -34,7 +33,7 @@ const examinationFormSchema = z.object({
   date: z.date({
     required_error: "Tanggal periksa harus diisi.",
   }),
-  doctorId: z.string().min(1, "Kode dokter harus diisi."),
+  doctorId: z.string().min(1, "Kode dokter harus diisi.").optional(),
   patientId: z.string().min(1, "Kode pasien harus diisi."),
   diseaseId: z.string().min(1, "Kode penyakit harus diisi."),
   complaints: z.string().min(1, "Keluhan harus diisi."),
@@ -48,22 +47,25 @@ export default function ExaminationForm() {
   const { firestore, auth } = useFirebase();
   const { user, isUserLoading } = useUser();
 
- useEffect(() => {
-    if (!isUserLoading && !user) {
-      initiateAnonymousSignIn(auth);
-    }
-  }, [isUserLoading, user, auth]);
-
-  const form = useForm<ExaminationFormValues>({
+ const form = useForm<ExaminationFormValues>({
     resolver: zodResolver(examinationFormSchema),
     defaultValues: {
-      doctorId: "",
       patientId: "",
       diseaseId: "",
       complaints: "",
       diagnosis: "",
     },
   })
+
+ useEffect(() => {
+    if (!isUserLoading && !user) {
+      initiateAnonymousSignIn(auth);
+    }
+    if (user) {
+        form.setValue('doctorId', user.uid);
+    }
+  }, [isUserLoading, user, auth, form]);
+
 
   function onSubmit(data: ExaminationFormValues) {
      if (!firestore || !user) {
@@ -75,18 +77,20 @@ export default function ExaminationForm() {
       return;
     }
     
-    // In a real app, this would be a subcollection of a patient
-    const examinationRef = collection(firestore, `doctors/${data.doctorId}/patients/${data.patientId}/examinations`);
+    const doctorId = data.doctorId || user.uid;
+    const examinationRefPath = `doctors/${doctorId}/patients/${data.patientId}/examinations`;
     const dataToSave = {
         ...data,
         date: data.date.toISOString(),
+        doctorId: doctorId,
     };
-    addDocumentNonBlocking(examinationRef, dataToSave);
+    addDocumentNonBlocking(firestore, examinationRefPath, dataToSave);
 
     toast({
       title: "Data Pemeriksaan Tersimpan",
       description: "Data pemeriksaan telah berhasil disimpan ke Firestore.",
     })
+    form.reset();
   }
 
   return (
@@ -147,7 +151,7 @@ export default function ExaminationForm() {
                   <FormItem>
                     <FormLabel>Kode Dokter</FormLabel>
                     <FormControl>
-                      <Input placeholder="Contoh: DR-001" {...field} />
+                      <Input placeholder="Contoh: DR-001" {...field} disabled={!!user}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

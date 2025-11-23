@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
-import { collection, doc } from "firebase/firestore"
+import { doc } from "firebase/firestore"
 import { useEffect } from "react"
 
 import { cn } from "@/lib/utils"
@@ -31,6 +31,8 @@ import { useFirebase, setDocumentNonBlocking, useUser, initiateAnonymousSignIn }
 
 const clientFormSchema = z.object({
   id: z.string().min(1, "ID Klien harus diisi."),
+  // Add patientId and doctorId to associate the client
+  patientId: z.string().min(1, "ID Pasien harus diisi."),
   name: z.string().min(1, "Nama Klien harus diisi."),
   address: z.string().min(1, "Alamat harus diisi."),
   phoneNumber: z.string().min(10, "Nomor HP minimal 10 digit.").max(15, "Nomor HP maksimal 15 digit."),
@@ -57,6 +59,7 @@ export default function ClientForm() {
     resolver: zodResolver(clientFormSchema),
     defaultValues: {
       id: "",
+      patientId: "",
       name: "",
       address: "",
       phoneNumber: "",
@@ -74,11 +77,11 @@ export default function ClientForm() {
       return;
     }
 
-    // This is a simplification. In a real app, you'd associate this
-    // with a specific patient and doctor.
-    const clientRef = doc(collection(firestore, "clients"), data.id);
+    // Correct path based on firestore.rules
+    const clientRef = doc(firestore, `doctors/${user.uid}/patients/${data.patientId}/clients`, data.id);
+    const { patientId, ...clientData } = data;
     const dataToSave = {
-        ...data,
+        ...clientData,
         visitDate: data.visitDate.toISOString(),
     };
     setDocumentNonBlocking(clientRef, dataToSave, { merge: true });
@@ -87,6 +90,7 @@ export default function ClientForm() {
       title: "Data Klien Tersimpan",
       description: "Data klien telah berhasil disimpan ke Firestore.",
     })
+    form.reset();
   }
 
   return (
@@ -99,6 +103,19 @@ export default function ClientForm() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+               <FormField
+                control={form.control}
+                name="patientId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ID Pasien</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Contoh: PASIEN-001" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="id"

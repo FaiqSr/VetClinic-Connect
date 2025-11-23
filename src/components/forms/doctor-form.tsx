@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { collection, doc } from "firebase/firestore"
+import { doc } from "firebase/firestore"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -30,7 +30,7 @@ import { setDocumentNonBlocking, initiateAnonymousSignIn, useUser } from "@/fire
 import { useEffect } from "react"
 
 const doctorFormSchema = z.object({
-  id: z.string().min(1, "Kode dokter harus diisi."),
+  id: z.string().min(1, "Kode dokter harus diisi. Gunakan User ID Anda jika masuk.").optional(),
   name: z.string().min(1, "Nama dokter harus diisi."),
   gender: z.string({ required_error: "Jenis kelamin harus dipilih." }),
   address: z.string().min(1, "Alamat harus diisi."),
@@ -45,22 +45,25 @@ export default function DoctorForm() {
   const { auth, firestore } = useFirebase()
   const { user, isUserLoading } = useUser();
 
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      initiateAnonymousSignIn(auth);
-    }
-  }, [isUserLoading, user, auth]);
-
   const form = useForm<DoctorFormValues>({
     resolver: zodResolver(doctorFormSchema),
     defaultValues: {
-      id: "",
       name: "",
       address: "",
       phoneNumber: "",
       schedule: "",
     },
   })
+  
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      initiateAnonymousSignIn(auth);
+    }
+     if (user) {
+      form.setValue('id', user.uid);
+    }
+  }, [isUserLoading, user, auth, form]);
+
 
   function onSubmit(data: DoctorFormValues) {
     if (!firestore || !user) {
@@ -72,20 +75,22 @@ export default function DoctorForm() {
         return;
     }
 
-    const doctorRef = doc(collection(firestore, "doctors"), data.id);
-    setDocumentNonBlocking(doctorRef, data, { merge: true });
+    const doctorId = data.id || user.uid;
+    const doctorRef = doc(firestore, "doctors", doctorId);
+    setDocumentNonBlocking(doctorRef, {...data, id: doctorId}, { merge: true });
 
     toast({
       title: "Data Dokter Tersimpan",
       description: "Data dokter telah berhasil disimpan ke Firestore.",
     })
+    form.reset();
   }
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle>Form Data Dokter</CardTitle>
-        <CardDescription>Masukkan detail informasi mengenai dokter yang praktek.</CardDescription>
+        <CardDescription>Masukkan detail informasi mengenai dokter yang praktek. Jika Anda masuk, ID Pengguna Anda akan digunakan sebagai Kode Dokter.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -98,7 +103,7 @@ export default function DoctorForm() {
                   <FormItem>
                     <FormLabel>Kode Dokter</FormLabel>
                     <FormControl>
-                      <Input placeholder="Contoh: DR-001" {...field} />
+                      <Input placeholder="Contoh: DR-001" {...field} disabled={!!user}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

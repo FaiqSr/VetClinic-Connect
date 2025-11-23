@@ -3,8 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { collection } from "firebase/firestore"
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -66,14 +65,13 @@ export default function StatusForm() {
       return;
     }
 
-    // This is a simplification. In a real app, you'd associate this with a specific doctor.
-    const statusRef = collection(firestore, `doctors/${user.uid}/patients/${data.patientId}/presentStatuses`);
-    addDocumentNonBlocking(statusRef, data);
-
+    const statusRef = addDocumentNonBlocking(firestore, `doctors/${user.uid}/patients/${data.patientId}/presentStatuses`, data);
+    
     toast({
       title: "Data Status Present Tersimpan",
       description: "Data status telah berhasil disimpan ke Firestore.",
     })
+    form.reset();
   }
 
   return (
