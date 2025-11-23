@@ -39,8 +39,7 @@ export function setDocumentNonBlocking(docRef: DocumentReference, data: any, opt
  * Does NOT await the write operation internally.
  * Returns the Promise for the new doc ref, but typically not awaited by caller.
  */
-export function addDocumentNonBlocking(firestore: Firestore, collectionPath: string, data: any) {
-  const colRef = collection(firestore, collectionPath);
+export function addDocumentNonBlocking(colRef: CollectionReference, data: any) {
   const promise = addDoc(colRef, data)
     .catch(error => {
       errorEmitter.emit(

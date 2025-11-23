@@ -74,7 +74,6 @@ export default function PatientForm() {
       return;
     }
     
-    // Correct path based on firestore.rules
     const patientRef = doc(firestore, `doctors/${user.uid}/patients`, data.id);
     setDocumentNonBlocking(patientRef, data, { merge: true });
 

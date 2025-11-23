@@ -6,6 +6,7 @@ import { z } from "zod"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 import { useEffect } from "react"
+import { collection } from "firebase/firestore"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -78,13 +79,14 @@ export default function ExaminationForm() {
     }
     
     const doctorId = data.doctorId || user.uid;
-    const examinationRefPath = `doctors/${doctorId}/patients/${data.patientId}/examinations`;
+    const examinationColRef = collection(firestore, `doctors/${doctorId}/patients/${data.patientId}/examinations`);
+    
     const dataToSave = {
         ...data,
         date: data.date.toISOString(),
         doctorId: doctorId,
     };
-    addDocumentNonBlocking(firestore, examinationRefPath, dataToSave);
+    addDocumentNonBlocking(examinationColRef, dataToSave);
 
     toast({
       title: "Data Pemeriksaan Tersimpan",

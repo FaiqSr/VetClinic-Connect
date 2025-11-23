@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { useEffect } from "react"
+import { collection } from "firebase/firestore"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -65,7 +66,8 @@ export default function StatusForm() {
       return;
     }
 
-    const statusRef = addDocumentNonBlocking(firestore, `doctors/${user.uid}/patients/${data.patientId}/presentStatuses`, data);
+    const statusRef = collection(firestore, `doctors/${user.uid}/patients/${data.patientId}/presentStatuses`);
+    addDocumentNonBlocking(statusRef, data);
     
     toast({
       title: "Data Status Present Tersimpan",
