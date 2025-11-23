@@ -5,7 +5,6 @@ import { useForm, useFieldArray } from "react-hook-form"
 import { z } from "zod"
 import { doc } from "firebase/firestore"
 import { PlusCircle, XCircle } from "lucide-react"
-import { useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -68,13 +67,6 @@ export default function DoctorForm() {
     control: form.control,
     name: "schedule",
   });
-  
-  useEffect(() => {
-     if (user && !form.getValues('id')) {
-      form.setValue('id', user.uid, { shouldValidate: true });
-    }
-  }, [user, form]);
-
 
   function onSubmit(data: DoctorFormValues) {
     if (!firestore || !user) {
@@ -86,28 +78,21 @@ export default function DoctorForm() {
         return;
     }
 
-    const doctorId = user.uid;
-    const doctorRef = doc(firestore, "doctors", doctorId);
-    setDocumentNonBlocking(doctorRef, {...data, id: doctorId}, { merge: true });
+    const doctorRef = doc(firestore, "doctors", data.id);
+    setDocumentNonBlocking(doctorRef, data, { merge: true });
 
     toast({
       title: "Data Dokter Tersimpan",
       description: "Data dokter telah berhasil disimpan atau diperbarui.",
     })
-    form.reset({
-      id: user.uid, // Keep the ID field populated after reset
-      name: "",
-      address: "",
-      phoneNumber: "",
-      schedule: [{ day: "Senin", startTime: "09:00", endTime: "17:00" }],
-    });
+    form.reset();
   }
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle>Form Data Dokter</CardTitle>
-        <CardDescription>Masukkan atau perbarui detail informasi mengenai profil dokter Anda. ID Dokter Anda akan disetel secara otomatis.</CardDescription>
+        <CardDescription>Masukkan detail informasi mengenai profil dokter.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -118,9 +103,9 @@ export default function DoctorForm() {
                 name="id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>ID Dokter (Otomatis)</FormLabel>
+                    <FormLabel>ID Dokter</FormLabel>
                     <FormControl>
-                      <Input placeholder="ID Pengguna Anda" {...field} disabled />
+                      <Input placeholder="Contoh: DOK-001" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
