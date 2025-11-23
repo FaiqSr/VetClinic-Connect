@@ -1,12 +1,13 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { useForm, Controller } from "react-hook-form"
 import { z } from "zod"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 import { useEffect } from "react"
-import { collection } from "firebase/firestore"
+import { collection, collectionGroup } from "firebase/firestore"
+import Select from "react-select"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -19,7 +20,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+import {
+  Select as ShadSelect,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Popover,
   PopoverContent,
@@ -28,15 +35,20 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { useFirebase, addDocumentNonBlocking, useUser } from "@/firebase"
+import { useFirebase, addDocumentNonBlocking, useUser, useCollection, useMemoFirebase } from "@/firebase"
+
+// Schemas for fetching data
+interface Doctor { id: string; name: string; }
+interface Patient { id: string; name: string; }
+interface Disease { id: string; name: string; }
 
 const examinationFormSchema = z.object({
   date: z.date({
     required_error: "Tanggal periksa harus diisi.",
   }),
-  doctorId: z.string().min(1, "Kode dokter harus diisi.").optional(),
-  patientId: z.string().min(1, "Kode pasien harus diisi."),
-  diseaseId: z.string().min(1, "Kode penyakit harus diisi."),
+  doctorId: z.string().min(1, "Dokter harus dipilih."),
+  patientId: z.string().min(1, "Pasien harus dipilih."),
+  diseaseIds: z.array(z.string()).min(1, "Minimal satu penyakit harus dipilih."),
   complaints: z.string().min(1, "Keluhan harus diisi."),
   diagnosis: z.string().min(1, "Diagnosis harus diisi."),
 })
@@ -48,19 +60,28 @@ export default function ExaminationForm() {
   const { firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
 
+  // Fetch data for selects
+  const doctorsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'doctors') : null, [firestore]);
+  const patientsQuery = useMemoFirebase(() => firestore ? collectionGroup(firestore, 'patients') : null, [firestore]);
+  const diseasesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'diseases') : null, [firestore]);
+
+  const { data: doctors, isLoading: loadingDoctors } = useCollection<Doctor>(doctorsQuery);
+  const { data: patients, isLoading: loadingPatients } = useCollection<Patient>(patientsQuery);
+  const { data: diseases, isLoading: loadingDiseases } = useCollection<Disease>(diseasesQuery);
+
  const form = useForm<ExaminationFormValues>({
     resolver: zodResolver(examinationFormSchema),
     defaultValues: {
       doctorId: "",
       patientId: "",
-      diseaseId: "",
+      diseaseIds: [],
       complaints: "",
       diagnosis: "",
     },
   })
 
  useEffect(() => {
-    if (user) {
+    if (user && !form.getValues('doctorId')) {
         form.setValue('doctorId', user.uid);
     }
   }, [user, form]);
@@ -76,13 +97,14 @@ export default function ExaminationForm() {
       return;
     }
     
-    const doctorId = user.uid;
-    const examinationColRef = collection(firestore, `doctors/${doctorId}/patients/${data.patientId}/examinations`);
+    // The doctorId for the path is the logged-in user
+    const loggedInDoctorId = user.uid;
+    const examinationColRef = collection(firestore, `doctors/${loggedInDoctorId}/patients/${data.patientId}/examinations`);
     
     const dataToSave = {
         ...data,
         date: data.date.toISOString(),
-        doctorId: doctorId,
+        // The doctorId in the document is the one selected from the form
     };
     addDocumentNonBlocking(examinationColRef, dataToSave);
 
@@ -90,8 +112,18 @@ export default function ExaminationForm() {
       title: "Data Pemeriksaan Tersimpan",
       description: "Data pemeriksaan telah berhasil disimpan ke Firestore.",
     })
-    form.reset();
+    form.reset({
+      doctorId: user.uid,
+      patientId: "",
+      diseaseIds: [],
+      complaints: "",
+      diagnosis: "",
+    });
   }
+
+  const diseaseOptions = diseases?.map(d => ({ value: d.id, label: `${d.id} - ${d.name}` })) || [];
+  
+  const isLoading = isUserLoading || loadingDoctors || loadingPatients || loadingDiseases;
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
@@ -144,15 +176,22 @@ export default function ExaminationForm() {
                   </FormItem>
                 )}
               />
-              <FormField
+               <FormField
                 control={form.control}
                 name="doctorId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Kode Dokter</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Contoh: DR-001" {...field} value={field.value ?? ''} disabled/>
-                    </FormControl>
+                    <FormLabel>Dokter Pemeriksa</FormLabel>
+                     <ShadSelect onValueChange={field.onChange} value={field.value} disabled={isLoading}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pilih Dokter" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {doctors?.map(doc => <SelectItem key={doc.id} value={doc.id}>{doc.name}</SelectItem>)}
+                      </SelectContent>
+                    </ShadSelect>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -162,27 +201,52 @@ export default function ExaminationForm() {
                 name="patientId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Kode Pasien</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Contoh: PASIEN-001" {...field} />
-                    </FormControl>
+                    <FormLabel>Pasien</FormLabel>
+                    <ShadSelect onValueChange={field.onChange} value={field.value} disabled={isLoading}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pilih Pasien" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {patients?.map(p => <SelectItem key={p.id} value={p.id}>{p.name} ({p.id})</SelectItem>)}
+                      </SelectContent>
+                    </ShadSelect>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="diseaseId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Kode Penyakit</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Contoh: PEN-001" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              
+              <div className="md:col-span-2">
+                <FormField
+                    control={form.control}
+                    name="diseaseIds"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Penyakit</FormLabel>
+                        <FormControl>
+                            <Controller
+                                name="diseaseIds"
+                                control={form.control}
+                                render={({ field }) => (
+                                    <Select
+                                        isMulti
+                                        options={diseaseOptions}
+                                        isLoading={loadingDiseases}
+                                        value={diseaseOptions.filter(opt => field.value?.includes(opt.value))}
+                                        onChange={opts => field.onChange(opts.map(opt => opt.value))}
+                                        className="text-sm"
+                                        classNamePrefix="select"
+                                    />
+                                )}
+                            />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
                 name="complaints"
@@ -219,7 +283,7 @@ export default function ExaminationForm() {
               />
             </div>
             <CardFooter className="flex justify-end p-0 pt-6">
-                <Button type="submit" disabled={isUserLoading}>Simpan Hasil Pemeriksaan</Button>
+                <Button type="submit" disabled={isLoading}>Simpan Hasil Pemeriksaan</Button>
             </CardFooter>
           </form>
         </Form>

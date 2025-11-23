@@ -36,7 +36,7 @@ const scheduleSchema = z.object({
 })
 
 const doctorFormSchema = z.object({
-  id: z.string().min(1, "Kode dokter harus diisi. Gunakan User ID Anda jika masuk.").optional(),
+  id: z.string().min(1, "ID Dokter harus diisi"),
   name: z.string().min(1, "Nama dokter harus diisi."),
   gender: z.string({ required_error: "Jenis kelamin harus dipilih." }),
   address: z.string().min(1, "Alamat harus diisi."),
@@ -56,6 +56,7 @@ export default function DoctorForm() {
   const form = useForm<DoctorFormValues>({
     resolver: zodResolver(doctorFormSchema),
     defaultValues: {
+      id: "",
       name: "",
       address: "",
       phoneNumber: "",
@@ -69,8 +70,8 @@ export default function DoctorForm() {
   });
   
   useEffect(() => {
-     if (user) {
-      form.setValue('id', user.uid);
+     if (user && !form.getValues('id')) {
+      form.setValue('id', user.uid, { shouldValidate: true });
     }
   }, [user, form]);
 
@@ -93,7 +94,13 @@ export default function DoctorForm() {
       title: "Data Dokter Tersimpan",
       description: "Data dokter telah berhasil disimpan atau diperbarui.",
     })
-    form.reset();
+    form.reset({
+      id: user.uid, // Keep the ID field populated after reset
+      name: "",
+      address: "",
+      phoneNumber: "",
+      schedule: [{ day: "Senin", startTime: "09:00", endTime: "17:00" }],
+    });
   }
 
   return (
@@ -113,7 +120,7 @@ export default function DoctorForm() {
                   <FormItem>
                     <FormLabel>ID Dokter (Otomatis)</FormLabel>
                     <FormControl>
-                      <Input placeholder="ID Pengguna Anda" {...field} disabled value={field.value ?? ''} />
+                      <Input placeholder="ID Pengguna Anda" {...field} disabled />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -138,7 +145,7 @@ export default function DoctorForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Jenis Kelamin</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Pilih jenis kelamin" />
