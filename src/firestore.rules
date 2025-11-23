@@ -5,32 +5,34 @@
  * Public reference data, like medications and diseases, is globally readable.
  *
  * Data Structure: The primary data is organized hierarchically under the
- * `/doctors/{doctorId}` path. This structure ensures that a doctor's data is
+ * /doctors/{doctorId} path. This structure ensures that a doctor's data is
  * logically grouped and can be secured efficiently using path-based rules.
- * Global lookup data (`/medications`, `/diseases`) is stored in separate,
+ * Global lookup data (/medications, /diseases) is stored in separate,
  * top-level collections for easy public access.
  *
  * Key Security Decisions:
- * - Strict Ownership: Only the authenticated doctor whose UID matches the
- *   `{doctorId}` in the path can access or modify the data within that path.
- * - No User Enumeration: Listing the top-level `/doctors` collection is
+ * - Strict Ownership for Reads: Only the authenticated doctor whose UID matches the
+ *   {doctorId} in the path can read their own profile directly.
+ * - Admin-like Writes: Any authenticated user can create, update, or delete
+ *   doctor profiles, facilitating admin-level management.
+ * - No User Enumeration: Listing the top-level /doctors collection is
  *   disallowed to protect doctor privacy.
- * - Public Read-Only Collections: `/medications` and `/diseases` are readable
+ * - Public Read-Only Collections: /medications and /diseases are readable
  *   by anyone (including unauthenticated users) but are not writable. This
  *   prevents unauthorized modification of shared clinic data.
  * - Path-Data Consistency: On creation, rules validate that the document's
- *   internal `id` field matches the document ID from the path, ensuring
+ *   internal id field matches the document ID from the path, ensuring
  *   relational integrity.
  *
  * Denormalization for Authorization: The data model is inherently designed for
  * efficient authorization. By nesting all patient-related data under a doctor's
- * ID, the rules can authorize access simply by checking the `doctorId` in the
- * path against the user's `request.auth.uid`. This avoids costly and slow `get()`
+ * ID, the rules can authorize access simply by checking the doctorId in the
+ * path against the user's request.auth.uid. This avoids costly and slow get()
  * calls to other documents for permission checks.
  *
  * Structural Segregation: The ruleset leverages structural segregation by
- * separating private doctor/patient data (`/doctors/{doctorId}/...`) from public
- * reference data (`/medications`, `/diseases`). This separation simplifies rules,
+ * separating private doctor/patient data (/doctors/{doctorId}/...) from public
+ * reference data (/medications, /diseases). This separation simplifies rules,
  * improves query performance, and enhances security by applying different
  * access control patterns to different data types.
  */
@@ -59,7 +61,7 @@ service cloud.firestore {
     function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
     }
-
+    
     // ---------------------------
     // Collection Group Rules
     // ---------------------------
@@ -84,7 +86,7 @@ service cloud.firestore {
     match /{path=**}/presentStatuses/{statusId} {
       allow list: if request.auth != null;
     }
-    
+
     // ---------------------------
     // Collection Rules
     // ---------------------------
