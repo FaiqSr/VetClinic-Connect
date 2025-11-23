@@ -13,9 +13,15 @@ import MedicationForm from '@/components/forms/medication-form';
 import ExaminationForm from '@/components/forms/examination-form';
 import DiseaseForm from '@/components/forms/disease-form';
 import { DoctorList } from '@/components/lists/doctor-list';
+import { PatientList } from '@/components/lists/patient-list';
+import { ClientList } from '@/components/lists/client-list';
+import { ExaminationList } from '@/components/lists/examination-list';
+import { StatusList } from '@/components/lists/status-list';
+import { MedicationList } from '@/components/lists/medication-list';
+import { DiseaseList } from '@/components/lists/disease-list';
 import { ScheduleCalendar } from '@/components/schedule-calendar';
 
-export type View = 'dashboard' | 'patient' | 'client' | 'status' | 'doctor' | 'medication' | 'examination' | 'disease' | 'schedule' | 'doctor-list';
+export type View = 'dashboard' | 'patient' | 'client' | 'status' | 'doctor' | 'medication' | 'examination' | 'disease' | 'schedule' | 'doctor-list' | 'patient-list' | 'client-list' | 'examination-list' | 'status-list' | 'medication-list' | 'disease-list';
 
 export default function Home() {
   const [activeView, setActiveView] = useState<View>('dashboard');
@@ -40,6 +46,18 @@ export default function Home() {
         return <ScheduleCalendar />;
       case 'doctor-list':
         return <DoctorList />;
+      case 'patient-list':
+        return <PatientList />;
+      case 'client-list':
+        return <ClientList />;
+      case 'examination-list':
+        return <ExaminationList />;
+      case 'status-list':
+        return <StatusList />;
+      case 'medication-list':
+        return <MedicationList />;
+      case 'disease-list':
+        return <DiseaseList />;
       case 'dashboard':
       default:
         return <DashboardWelcome />;

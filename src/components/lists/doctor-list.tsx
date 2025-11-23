@@ -1,8 +1,8 @@
 'use client';
 
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { useFirebase, useMemoFirebase, useUser } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useFirebase, useMemoFirebase, useUser, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import {
   Table,
   TableBody,
@@ -14,6 +14,21 @@ import {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
 import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useToast } from '@/hooks/use-toast';
+
 
 interface Schedule {
   day: string;
@@ -33,6 +48,7 @@ interface Doctor {
 export function DoctorList() {
   const { firestore } = useFirebase();
   const { user, isUserLoading: isUserLoadingAuth } = useUser();
+  const { toast } = useToast();
 
   const doctorsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -42,6 +58,16 @@ export function DoctorList() {
   const { data: doctors, isLoading: isDoctorsLoading } = useCollection<Doctor>(doctorsQuery);
 
   const displayLoading = isDoctorsLoading || isUserLoadingAuth;
+  
+  const handleDelete = (doctorId: string) => {
+    if (!firestore) return;
+    const docRef = doc(firestore, 'doctors', doctorId);
+    deleteDocumentNonBlocking(docRef);
+    toast({
+        title: "Data Dokter Dihapus",
+        description: `Dokter dengan ID ${doctorId} telah dihapus.`,
+    });
+  }
 
   return (
     <Card>
@@ -58,6 +84,7 @@ export function DoctorList() {
               <TableHead>Alamat</TableHead>
               <TableHead>No. HP</TableHead>
               <TableHead>Jadwal</TableHead>
+              <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -79,6 +106,9 @@ export function DoctorList() {
                   <TableCell>
                     <Skeleton className="h-4 w-[200px]" />
                   </TableCell>
+                   <TableCell>
+                    <Skeleton className="h-8 w-8 ml-auto" />
+                  </TableCell>
                 </TableRow>
               ))}
             {!displayLoading && doctors && doctors.length > 0 ? (
@@ -97,12 +127,33 @@ export function DoctorList() {
                       ))}
                     </div>
                   </TableCell>
+                   <TableCell className="text-right">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                         <Button variant="ghost" size="icon">
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tindakan ini tidak dapat diurungkan. Ini akan menghapus data dokter secara permanen.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Batal</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(doctor.id)} className="bg-destructive hover:bg-destructive/90">Hapus</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               !displayLoading && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">
+                  <TableCell colSpan={6} className="text-center">
                     Tidak ada data dokter.
                   </TableCell>
                 </TableRow>
@@ -114,4 +165,3 @@ export function DoctorList() {
     </Card>
   );
 }
-    

@@ -42,6 +42,12 @@ export function DashboardNav({ activeView, setActiveView }: DashboardNavProps) {
     { view: "disease", label: "Data Penyakit", icon: Bug },
     { view: "schedule", label: "Jadwal", icon: Calendar },
     { view: "doctor-list", label: "Daftar Dokter", icon: List },
+    { view: "patient-list", label: "Daftar Pasien", icon: List },
+    { view: "client-list", label: "Daftar Klien", icon: List },
+    { view: "examination-list", label: "Daftar Pemeriksaan", icon: List },
+    { view: "status-list", label: "Daftar Status", icon: List },
+    { view: "medication-list", label: "Daftar Obat", icon: List },
+    { view: "disease-list", label: "Daftar Penyakit", icon: List },
   ]
 
   return (
