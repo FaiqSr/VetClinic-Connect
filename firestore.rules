@@ -65,21 +65,24 @@ service cloud.firestore {
     // ---------------------------
     
     /**
-     * @description Allows any authenticated user to list clients across all doctors for the calendar view.
-     * @path /{path=**}/clients/{clientId}
+     * @description Allows any authenticated user to list clients, examinations, patients, and statuses across all doctors for list/calendar views.
+     * @path /{path=**}/<collection>/{docId}
      * @principle Separation of concerns: Allows broad read for UI features while keeping write access restricted.
      */
     match /{path=**}/clients/{clientId} {
       allow list: if request.auth != null;
     }
 
-    /**
-     * @description Allows any authenticated user to list examinations across all doctors for the calendar view.
-     * @path /{path=**}/examinations/{examinationId}
-     * @principle Separation of concerns: Allows broad read for UI features while keeping write access restricted.
-     */
     match /{path=**}/examinations/{examinationId} {
         allow list: if request.auth != null;
+    }
+
+    match /{path=**}/patients/{patientId} {
+      allow list: if request.auth != null;
+    }
+    
+    match /{path=**}/presentStatuses/{statusId} {
+      allow list: if request.auth != null;
     }
     
     // ---------------------------
@@ -105,12 +108,12 @@ service cloud.firestore {
        * @description Controls access to patient records, which are owned by a specific doctor.
        * @path /doctors/{doctorId}/patients/{patientId}
        * @allow (create) The owning doctor ('doctor_abc') creates a new patient record under their own path.
-       * @deny  (list) A different doctor ('doctor_xyz') tries to list patients for 'doctor_abc'.
+       * @deny  (get) An anonymous user tries to read a patient record.
        * @principle Path-based ownership: Access is inherited from the parent doctor's path.
        */
       match /patients/{patientId} {
         allow get: if isOwner(doctorId);
-        allow list: if isOwner(doctorId);
+        // allow list is handled by the collection group rule above.
         allow create: if isOwner(doctorId);
         allow update: if isExistingOwner(doctorId);
         allow delete: if isExistingOwner(doctorId);
@@ -133,13 +136,13 @@ service cloud.firestore {
         /**
          * @description Controls access to patient health status records.
          * @path /doctors/{doctorId}/patients/{patientId}/presentStatuses/{presentStatusId}
-         * @allow (list) The owning doctor ('doctor_abc') lists all status updates for a patient.
+         * @allow (get) The owning doctor ('doctor_abc') can read status updates for a patient.
          * @deny  (create) A different doctor ('doctor_xyz') tries to add a new status record.
          * @principle Path-based ownership: Access is inherited from the parent doctor's path.
          */
         match /presentStatuses/{presentStatusId} {
           allow get: if isOwner(doctorId);
-          allow list: if isOwner(doctorId);
+          // allow list is handled by the collection group rule above.
           allow create: if isOwner(doctorId);
           allow update: if isExistingOwner(doctorId);
           allow delete: if isExistingOwner(doctorId);
