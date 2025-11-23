@@ -51,6 +51,7 @@ export default function ExaminationForm() {
  const form = useForm<ExaminationFormValues>({
     resolver: zodResolver(examinationFormSchema),
     defaultValues: {
+      doctorId: "",
       patientId: "",
       diseaseId: "",
       complaints: "",
@@ -86,7 +87,9 @@ export default function ExaminationForm() {
         date: data.date.toISOString(),
         doctorId: doctorId,
     };
-    addDocumentNonBlocking(examinationColRef, dataToSave);
+    addDocumentNonBlocking(examinationColRef, dataToSave).catch(error => {
+      // Error handling is managed by the global listener via non-blocking update
+    });
 
     toast({
       title: "Data Pemeriksaan Tersimpan",
