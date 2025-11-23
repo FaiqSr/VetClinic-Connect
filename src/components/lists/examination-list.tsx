@@ -44,7 +44,7 @@ export function ExaminationList() {
         <CardTitle>Daftar Pemeriksaan</CardTitle>
         <CardDescription>Berikut adalah riwayat pemeriksaan yang tercatat.</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -69,7 +69,7 @@ export function ExaminationList() {
             {!displayLoading && examinations && examinations.length > 0 ? (
               examinations.map((exam) => (
                 <TableRow key={exam.id}>
-                  <TableCell>{format(new Date(exam.date), 'PPP')}</TableCell>
+                  <TableCell className="whitespace-nowrap">{format(new Date(exam.date), 'PPP')}</TableCell>
                   <TableCell>{exam.patientId}</TableCell>
                   <TableCell>{exam.doctorId}</TableCell>
                   <TableCell>{exam.complaints}</TableCell>

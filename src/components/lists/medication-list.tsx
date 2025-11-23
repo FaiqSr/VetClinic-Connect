@@ -40,7 +40,7 @@ export function MedicationList() {
         <CardTitle>Daftar Obat</CardTitle>
         <CardDescription>Berikut adalah daftar semua obat yang tersedia.</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -61,7 +61,7 @@ export function MedicationList() {
             {!displayLoading && medications && medications.length > 0 ? (
               medications.map((med) => (
                 <TableRow key={med.id}>
-                  <TableCell className="font-medium">{med.name}</TableCell>
+                  <TableCell className="font-medium whitespace-nowrap">{med.name}</TableCell>
                   <TableCell>{med.type}</TableCell>
                   <TableCell>{med.price.toLocaleString('id-ID')}</TableCell>
                 </TableRow>

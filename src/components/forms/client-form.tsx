@@ -30,7 +30,6 @@ import { useFirebase, setDocumentNonBlocking, useUser } from "@/firebase"
 
 const clientFormSchema = z.object({
   id: z.string().min(1, "ID Klien harus diisi."),
-  // Add patientId and doctorId to associate the client
   patientId: z.string().min(1, "ID Pasien harus diisi."),
   name: z.string().min(1, "Nama Klien harus diisi."),
   address: z.string().min(1, "Alamat harus diisi."),
@@ -70,7 +69,6 @@ export default function ClientForm() {
       return;
     }
 
-    // Correct path based on firestore.rules
     const clientRef = doc(firestore, `doctors/${user.uid}/patients/${data.patientId}/clients`, data.id);
     const { patientId, ...clientData } = data;
     const dataToSave = {
@@ -192,7 +190,8 @@ export default function ClientForm() {
                           selected={field.value}
                           onSelect={field.onChange}
                           disabled={(date) =>
-                            date < new Date() }
+                            date < new Date("1900-01-01")
+                          }
                           initialFocus
                         />
                       </PopoverContent>

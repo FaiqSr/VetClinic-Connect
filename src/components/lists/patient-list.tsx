@@ -43,7 +43,7 @@ export function PatientList() {
         <CardTitle>Daftar Pasien</CardTitle>
         <CardDescription>Berikut adalah daftar semua pasien yang terdaftar di sistem.</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -70,9 +70,9 @@ export function PatientList() {
             {!displayLoading && patients && patients.length > 0 ? (
               patients.map((patient) => (
                 <TableRow key={patient.id}>
-                  <TableCell className="font-medium">{patient.name}</TableCell>
-                  <TableCell>{patient.species}</TableCell>
-                  <TableCell>{patient.breed}</TableCell>
+                  <TableCell className="font-medium whitespace-nowrap">{patient.name}</TableCell>
+                  <TableCell className="whitespace-nowrap">{patient.species}</TableCell>
+                  <TableCell className="whitespace-nowrap">{patient.breed}</TableCell>
                   <TableCell>{patient.age}</TableCell>
                   <TableCell>{patient.weight}</TableCell>
                   <TableCell>{patient.gender}</TableCell>

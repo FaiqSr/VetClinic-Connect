@@ -43,7 +43,7 @@ export function ClientList() {
         <CardTitle>Daftar Klien</CardTitle>
         <CardDescription>Berikut adalah daftar semua klien yang terdaftar di sistem.</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -68,11 +68,11 @@ export function ClientList() {
             {!displayLoading && clients && clients.length > 0 ? (
               clients.map((client) => (
                 <TableRow key={client.id}>
-                  <TableCell className="font-medium">{client.name}</TableCell>
-                  <TableCell>{client.address}</TableCell>
+                  <TableCell className="font-medium whitespace-nowrap">{client.name}</TableCell>
+                  <TableCell className="whitespace-nowrap">{client.address}</TableCell>
                   <TableCell>{client.phoneNumber}</TableCell>
                   <TableCell>{format(new Date(client.visitDate), 'PPP')}</TableCell>
-                  <TableCell>{client.responsiblePerson}</TableCell>
+                  <TableCell className="whitespace-nowrap">{client.responsiblePerson}</TableCell>
                 </TableRow>
               ))
             ) : (

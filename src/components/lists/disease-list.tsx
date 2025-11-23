@@ -39,7 +39,7 @@ export function DiseaseList() {
         <CardTitle>Daftar Penyakit</CardTitle>
         <CardDescription>Berikut adalah daftar penyakit yang terdaftar.</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -58,7 +58,7 @@ export function DiseaseList() {
             {!displayLoading && diseases && diseases.length > 0 ? (
               diseases.map((disease) => (
                 <TableRow key={disease.id}>
-                  <TableCell className="font-medium">{disease.name}</TableCell>
+                  <TableCell className="font-medium whitespace-nowrap">{disease.name}</TableCell>
                   <TableCell>{disease.description}</TableCell>
                 </TableRow>
               ))

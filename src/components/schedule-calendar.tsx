@@ -178,11 +178,11 @@ export function ScheduleCalendar() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
                 <CardTitle>Jadwal Mingguan Dokter</CardTitle>
-                <CardDescription>
-                    Menampilkan jadwal praktik dokter dan janji temu untuk minggu ini.
+                <CardDescription className="mt-1">
+                    Menampilkan jadwal praktik dan janji temu untuk minggu ini.
                 </CardDescription>
             </div>
              <div className="flex items-center gap-2">
@@ -198,9 +198,9 @@ export function ScheduleCalendar() {
             </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         {displayLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-2">
                  {Array.from({ length: 7 }).map((_, i) => (
                     <div key={i} className="p-2 border rounded-lg min-h-[200px]">
                         <Skeleton className="h-6 w-1/2 mb-4" />

@@ -225,7 +225,7 @@ export default function DoctorForm() {
                         </FormItem>
                       )}
                     />
-                     <Button type="button" variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => remove(index)}>
+                     <Button type="button" variant="ghost" size="icon" className="text-destructive hover:text-destructive md:justify-self-center" onClick={() => remove(index)}>
                         <XCircle />
                         <span className="sr-only">Hapus Jadwal</span>
                       </Button>

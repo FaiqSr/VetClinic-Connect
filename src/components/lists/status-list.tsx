@@ -45,7 +45,7 @@ export function StatusList() {
         <CardTitle>Daftar Status Present</CardTitle>
         <CardDescription>Berikut adalah daftar status present pasien yang tercatat.</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -72,7 +72,7 @@ export function StatusList() {
             {!displayLoading && statuses && statuses.length > 0 ? (
               statuses.map((status) => (
                 <TableRow key={status.id}>
-                  <TableCell>{status.patientId}</TableCell>
+                  <TableCell className="whitespace-nowrap">{status.patientId}</TableCell>
                   <TableCell>{status.temperature}</TableCell>
                   <TableCell>{status.heartRate}</TableCell>
                   <TableCell>{status.respiratoryRate}</TableCell>

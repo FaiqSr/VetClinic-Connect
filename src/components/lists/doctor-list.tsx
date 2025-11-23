@@ -75,7 +75,7 @@ export function DoctorList() {
         <CardTitle>Daftar Dokter</CardTitle>
         <CardDescription>Berikut adalah daftar dokter yang terdaftar di sistem.</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -114,12 +114,12 @@ export function DoctorList() {
             {!displayLoading && doctors && doctors.length > 0 ? (
               doctors.map((doctor) => (
                 <TableRow key={doctor.id}>
-                  <TableCell className="font-medium">{doctor.name}</TableCell>
+                  <TableCell className="font-medium whitespace-nowrap">{doctor.name}</TableCell>
                   <TableCell>{doctor.gender}</TableCell>
-                  <TableCell>{doctor.address}</TableCell>
+                  <TableCell className="whitespace-nowrap">{doctor.address}</TableCell>
                   <TableCell>{doctor.phoneNumber}</TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 min-w-[200px]">
                        {doctor.schedule?.map((s, index) => (
                         <Badge key={index} variant="secondary" className="whitespace-nowrap">
                           {s.day}: {s.startTime} - {s.endTime}
