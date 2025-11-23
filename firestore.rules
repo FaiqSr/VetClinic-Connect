@@ -4,105 +4,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ---------------------------
-    // Helper Functions
-    // ---------------------------
-
-    /**
-     * Checks if a user is authenticated.
-     */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * Checks if the currently authenticated user's UID matches the provided doctorId.
-     * This is the primary function for verifying document ownership for a doctor.
-     */
-    function isOwner(doctorId) {
-      return request.auth.uid == doctorId;
-    }
-
-    // ---------------------------
-    // Collection Group Rules
-    // ---------------------------
-
-    /**
-     * Allows any authenticated user to list clients, examinations, patients, and statuses
-     * across all doctors. This is useful for admin-level views or features
-     * like the weekly schedule calendar. Write access remains restricted by specific path rules.
-     */
-    match /{path=**}/clients/{clientId} {
-      allow list: if isSignedIn();
-    }
-
-    match /{path=**}/examinations/{examinationId} {
-        allow list: if isSignedIn();
-    }
-
-    match /{path=**}/patients/{patientId} {
-      allow list: if isSignedIn();
-    }
-    
-    match /{path=**}/presentStatuses/{statusId} {
-      allow list: if isSignedIn();
-    }
-
-    // ---------------------------
-    // Collection Rules
-    // ---------------------------
-
-    /**
-     * @description Controls access to doctor profiles and their nested data.
-     *              Any authenticated user (admin/doctor) can manage all doctor data.
-     * @path /doctors/{doctorId}
-     */
-    match /doctors/{doctorId} {
-      allow read, write: if isSignedIn();
-
-      /**
-       * @description Controls access to patient records, which are owned by a specific doctor.
-       *              Access is granted if the requesting user is authenticated.
-       */
-      match /patients/{patientId} {
-        allow read, write: if isSignedIn();
-
-        /**
-         * @description Controls access to client, status, and examination records associated with a patient.
-         *              Access is granted if the requesting user is authenticated.
-         */
-        match /clients/{clientId} {
-          allow read, write: if isSignedIn();
-        }
-
-        match /presentStatuses/{presentStatusId} {
-          allow read, write: if isSignedIn();
-        }
-
-        match /examinations/{examinationId} {
-          allow read, write: if isSignedIn();
-        }
-      }
-    }
-
-    /**
-     * @description Manages the global list of medications.
-     *              This data is public to read for all users.
-     *              Write access is restricted to authenticated users (admins/doctors).
-     */
-    match /medications/{medicationId} {
-      allow read: if true;
-      allow write: if isSignedIn();
-    }
-
-    /**
-     * @description Manages the global list of diseases.
-     *              This data is public to read for all users.
-     *              Write access is restricted to authenticated users (admins/doctors).
-     */
-    match /diseases/{diseaseId} {
-      allow read: if true;
-      allow write: if isSignedIn();
+    // Aturan ini berlaku untuk semua dokumen ('{document=**}') di dalam database.
+    // Ini memberikan izin baca dan tulis penuh kepada setiap pengguna yang
+    // telah terautentikasi (request.auth != null).
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
   }
 }
