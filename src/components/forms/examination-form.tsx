@@ -87,9 +87,7 @@ export default function ExaminationForm() {
         date: data.date.toISOString(),
         doctorId: doctorId,
     };
-    addDocumentNonBlocking(examinationColRef, dataToSave).catch(error => {
-      // Error handling is managed by the global listener via non-blocking update
-    });
+    addDocumentNonBlocking(examinationColRef, dataToSave);
 
     toast({
       title: "Data Pemeriksaan Tersimpan",
@@ -156,7 +154,7 @@ export default function ExaminationForm() {
                   <FormItem>
                     <FormLabel>Kode Dokter</FormLabel>
                     <FormControl>
-                      <Input placeholder="Contoh: DR-001" {...field} disabled={!!user}/>
+                      <Input placeholder="Contoh: DR-001" {...field} value={field.value || ''} disabled={!!user}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
