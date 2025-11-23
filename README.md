@@ -177,7 +177,6 @@ Lisensi
 
 Kontak
 - Pemilik / Maintainer: FaiqSr
-- Email: tambahkan email Anda di sini (opsional)
 - GitHub: https://github.com/FaiqSr
 
 Catatan penutup
