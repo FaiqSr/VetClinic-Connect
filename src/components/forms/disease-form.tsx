@@ -1,9 +1,10 @@
+
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { doc } from "firebase/firestore"
+import { doc, collection } from "firebase/firestore"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -18,7 +19,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { useFirebase, setDocumentNonBlocking, useUser } from "@/firebase"
+import { useFirebase, setDocumentNonBlocking, useUser, useCollection, useMemoFirebase } from "@/firebase"
 
 const diseaseFormSchema = z.object({
   id: z.string().min(1, "Kode penyakit harus diisi."),
@@ -32,6 +33,10 @@ interface DiseaseFormProps {
   initialData?: DiseaseFormValues;
   isEditMode?: boolean;
   closeDialog?: () => void;
+}
+
+interface Disease {
+    id: string;
 }
 
 export default function DiseaseForm({ initialData, isEditMode = false, closeDialog }: DiseaseFormProps) {
@@ -48,6 +53,9 @@ export default function DiseaseForm({ initialData, isEditMode = false, closeDial
     },
   })
 
+  const diseasesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'diseases') : null, [firestore]);
+  const { data: diseases, isLoading: isLoadingDiseases } = useCollection<Disease>(diseasesQuery);
+
   function onSubmit(data: DiseaseFormValues) {
     if (!firestore || !user) {
       toast({
@@ -56,6 +64,14 @@ export default function DiseaseForm({ initialData, isEditMode = false, closeDial
         description: "Anda harus login sebagai admin untuk menyimpan data penyakit.",
       });
       return;
+    }
+
+    if (!isEditMode && diseases?.some(d => d.id === data.id)) {
+        form.setError("id", {
+            type: "manual",
+            message: "ID Penyakit sudah digunakan.",
+        });
+        return;
     }
 
     const diseaseRef = doc(firestore, "diseases", data.id);
@@ -75,6 +91,7 @@ export default function DiseaseForm({ initialData, isEditMode = false, closeDial
   
   const Wrapper = isEditMode ? 'div' : Card;
   const wrapperProps = isEditMode ? {} : { className: "w-full max-w-4xl mx-auto" };
+  const isLoading = isUserLoading || isLoadingDiseases;
 
   const formContent = (
      <Form {...form}>
@@ -125,7 +142,7 @@ export default function DiseaseForm({ initialData, isEditMode = false, closeDial
               />
             </div>
             <CardFooter className="flex justify-end p-0 pt-6">
-                <Button type="submit" disabled={isUserLoading}>{isEditMode ? "Simpan Perubahan" : "Simpan Data Penyakit"}</Button>
+                <Button type="submit" disabled={isLoading}>{isEditMode ? "Simpan Perubahan" : "Simpan Data Penyakit"}</Button>
             </CardFooter>
           </form>
         </Form>
@@ -147,3 +164,5 @@ export default function DiseaseForm({ initialData, isEditMode = false, closeDial
     </Wrapper>
   )
 }
+
+    

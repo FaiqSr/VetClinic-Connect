@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -29,7 +30,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { useFirebase, setDocumentNonBlocking, useUser, useCollection, useMemoFirebase } from "@/firebase"
 
 const statusFormSchema = z.object({
-  id: z.string().optional(),
+  id: z.string().optional(), // ID is optional, will be auto-generated
   patientId: z.string().min(1, "ID Pasien harus diisi."),
   actions: z.string().min(1, "Tindakan harus diisi."),
   behavior: z.string().min(1, "Tingkah laku harus diisi."),
@@ -83,9 +84,11 @@ export default function StatusForm({ initialData, isEditMode = false, closeDialo
       return;
     }
 
-    const statusId = isEditMode && data.id ? data.id : doc(collection(firestore, 'dummy')).id;
+    // Use existing ID for edit mode, or generate a new one for create mode
+    const statusId = (isEditMode && data.id) ? data.id : doc(collection(firestore, 'dummy')).id;
     const statusRef = doc(firestore, `doctors/${user.uid}/patients/${data.patientId}/presentStatuses`, statusId);
     
+    // Ensure the ID is part of the data being saved
     const dataToSave = { ...data, id: statusId };
     setDocumentNonBlocking(statusRef, dataToSave, { merge: true });
     
@@ -97,7 +100,16 @@ export default function StatusForm({ initialData, isEditMode = false, closeDialo
     if (closeDialog) {
         closeDialog();
     } else if (!isEditMode) {
-        form.reset();
+        form.reset({
+          patientId: "",
+          actions: "",
+          behavior: "",
+          hydration: "",
+          posture: "",
+          temperature: 0,
+          heartRate: 0,
+          respiratoryRate: 0,
+        });
     }
   }
 
@@ -246,3 +258,5 @@ export default function StatusForm({ initialData, isEditMode = false, closeDialo
     </Wrapper>
   )
 }
+
+    

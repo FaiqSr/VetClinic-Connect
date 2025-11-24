@@ -1,3 +1,4 @@
+
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -65,6 +66,10 @@ interface ExaminationFormProps {
     closeDialog?: () => void;
 }
 
+interface Examination {
+    id: string;
+}
+
 export default function ExaminationForm({ initialData, isEditMode = false, closeDialog }: ExaminationFormProps) {
   const { toast } = useToast()
   const { firestore } = useFirebase();
@@ -88,16 +93,23 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
   const doctorsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'doctors') : null, [firestore]);
   const patientsQuery = useMemoFirebase(() => firestore ? collectionGroup(firestore, 'patients') : null, [firestore]);
   const diseasesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'diseases') : null, [firestore]);
+  
   const presentStatusesQuery = useMemoFirebase(() => {
     if (!firestore || !user || !selectedPatientId) return null;
-    return query(collection(firestore, `doctors/${user.uid}/patients/${selectedPatientId}/presentStatuses`));
+    // This query is now correct, fetching from the specific patient's subcollection
+    return collection(firestore, `doctors/${user.uid}/patients/${selectedPatientId}/presentStatuses`);
   }, [firestore, user, selectedPatientId]);
-
+  
+  const examinationsQuery = useMemoFirebase(() => {
+      if (!firestore || !user || !selectedPatientId) return null;
+      return collection(firestore, `doctors/${user.uid}/patients/${selectedPatientId}/examinations`);
+  }, [firestore, user, selectedPatientId]);
 
   const { data: doctors, isLoading: loadingDoctors } = useCollection<Doctor>(doctorsQuery);
   const { data: patients, isLoading: loadingPatients } = useCollection<Patient>(patientsQuery);
   const { data: diseases, isLoading: loadingDiseases } = useCollection<Disease>(diseasesQuery);
   const { data: presentStatuses, isLoading: loadingStatuses } = useCollection<PresentStatus>(presentStatusesQuery);
+  const { data: examinations, isLoading: isLoadingExaminations } = useCollection<Examination>(examinationsQuery);
 
 
  useEffect(() => {
@@ -128,6 +140,16 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
     const loggedInDoctorId = user.uid;
     // Use existing ID for edit, or generate a new one for create
     const examId = isEditMode && data.id ? data.id : doc(collection(firestore, 'dummy')).id;
+
+    if (!isEditMode && examinations?.some(e => e.id === examId)) {
+        // This case is highly unlikely with auto-generated IDs but good for safety
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "ID Pemeriksaan sudah ada. Silakan coba lagi.",
+        });
+        return;
+    }
 
     const examinationDocRef = doc(firestore, `doctors/${loggedInDoctorId}/patients/${data.patientId}/examinations`, examId);
     
@@ -160,7 +182,7 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
 
   const diseaseOptions = diseases?.map(d => ({ value: d.id, label: `${d.id} - ${d.name}` })) || [];
   
-  const isLoading = isUserLoading || loadingDoctors || loadingPatients || loadingDiseases;
+  const isLoading = isUserLoading || loadingDoctors || loadingPatients || loadingDiseases || isLoadingExaminations;
   
   const Wrapper = isEditMode ? 'div' : Card;
   const wrapperProps = isEditMode ? {} : { className: "w-full max-w-4xl mx-auto" };
@@ -359,3 +381,5 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
     </Wrapper>
   )
 }
+
+    

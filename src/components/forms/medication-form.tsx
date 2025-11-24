@@ -1,9 +1,10 @@
+
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { doc } from "firebase/firestore"
+import { doc, collection } from "firebase/firestore"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -24,7 +25,7 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { useFirebase, setDocumentNonBlocking, useUser } from "@/firebase"
+import { useFirebase, setDocumentNonBlocking, useUser, useCollection, useMemoFirebase } from "@/firebase"
 
 const medicationFormSchema = z.object({
   id: z.string().min(1, "Kode obat harus diisi."),
@@ -41,6 +42,10 @@ interface MedicationFormProps {
     closeDialog?: () => void;
 }
 
+interface Medication {
+    id: string;
+}
+
 export default function MedicationForm({ initialData, isEditMode = false, closeDialog }: MedicationFormProps) {
   const { toast } = useToast()
   const { firestore } = useFirebase();
@@ -55,6 +60,9 @@ export default function MedicationForm({ initialData, isEditMode = false, closeD
     },
   })
 
+  const medicationsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'medications') : null, [firestore]);
+  const { data: medications, isLoading: isLoadingMedications } = useCollection<Medication>(medicationsQuery);
+
   function onSubmit(data: MedicationFormValues) {
     if (!firestore || !user) {
       toast({
@@ -63,6 +71,14 @@ export default function MedicationForm({ initialData, isEditMode = false, closeD
         description: "Anda harus login sebagai admin untuk menyimpan data obat.",
       });
       return;
+    }
+
+    if (!isEditMode && medications?.some(m => m.id === data.id)) {
+        form.setError("id", {
+            type: "manual",
+            message: "ID Obat sudah digunakan.",
+        });
+        return;
     }
 
     const medicationRef = doc(firestore, "medications", data.id);
@@ -82,6 +98,7 @@ export default function MedicationForm({ initialData, isEditMode = false, closeD
 
   const Wrapper = isEditMode ? 'div' : Card;
   const wrapperProps = isEditMode ? {} : { className: "w-full max-w-4xl mx-auto" };
+  const isLoading = isUserLoading || isLoadingMedications;
 
   const formContent = (
     <Form {...form}>
@@ -153,7 +170,7 @@ export default function MedicationForm({ initialData, isEditMode = false, closeD
             />
         </div>
         <CardFooter className="flex justify-end p-0 pt-6">
-            <Button type="submit" disabled={isUserLoading}>{isEditMode ? "Simpan Perubahan" : "Simpan Data Obat"}</Button>
+            <Button type="submit" disabled={isLoading}>{isEditMode ? "Simpan Perubahan" : "Simpan Data Obat"}</Button>
         </CardFooter>
         </form>
     </Form>
@@ -175,3 +192,5 @@ export default function MedicationForm({ initialData, isEditMode = false, closeD
     </Wrapper>
   )
 }
+
+    
