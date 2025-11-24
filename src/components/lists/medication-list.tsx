@@ -25,6 +25,7 @@ interface Medication {
   type: string;
   name: string;
   price: number;
+  __path: string;
 }
 
 export function MedicationList() {
@@ -37,17 +38,17 @@ export function MedicationList() {
     return collection(firestore, 'medications');
   }, [firestore, isUserLoading]);
 
-  const { data: medications, isLoading: isMedicationsLoading } = useCollection<Medication>(medicationsQuery);
+  const { data: medications, isLoading: isMedicationsLoading } = useCollection<Medication>(medicationsQuery, { includePath: true });
 
   const isLoading = isMedicationsLoading || isUserLoading;
 
-  const handleDelete = (medicationId: string, medicationName: string) => {
+  const handleDelete = (med: Medication) => {
     if (!firestore) return;
-    const docRef = doc(firestore, 'medications', medicationId);
+    const docRef = doc(firestore, med.__path);
     deleteDocumentNonBlocking(docRef);
     toast({
         title: "Data Obat Dihapus",
-        description: `Obat ${medicationName} telah dihapus.`,
+        description: `Obat ${med.name} telah dihapus.`,
     });
   }
 
@@ -79,7 +80,7 @@ export function MedicationList() {
               ))}
             {!isLoading && medications && medications.length > 0 ? (
               medications.map((med) => (
-                <TableRow key={med.id}>
+                <TableRow key={med.__path}>
                   <TableCell className="font-medium whitespace-nowrap">{med.name}</TableCell>
                   <TableCell>{med.type}</TableCell>
                   <TableCell>{med.price.toLocaleString('id-ID')}</TableCell>
@@ -111,7 +112,7 @@ export function MedicationList() {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Batal</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(med.id, med.name)} className="bg-destructive hover:bg-destructive/90">Hapus</AlertDialogAction>
+                            <AlertDialogAction onClick={() => handleDelete(med)} className="bg-destructive hover:bg-destructive/90">Hapus</AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>

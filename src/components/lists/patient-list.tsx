@@ -89,7 +89,7 @@ export function PatientList() {
               ))}
             {!isLoading && patients && patients.length > 0 ? (
               patients.map((patient) => (
-                <TableRow key={patient.id}>
+                <TableRow key={patient.__path}>
                   <TableCell className="font-medium whitespace-nowrap">{patient.name}</TableCell>
                   <TableCell className="whitespace-nowrap">{patient.species}</TableCell>
                   <TableCell className="whitespace-nowrap">{patient.breed}</TableCell>

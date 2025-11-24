@@ -88,7 +88,7 @@ export function ClientList() {
               ))}
             {!displayLoading && clients && clients.length > 0 ? (
               clients.map((client) => (
-                <TableRow key={client.id}>
+                <TableRow key={client.__path}>
                   <TableCell className="font-medium whitespace-nowrap">{client.name}</TableCell>
                   <TableCell className="whitespace-nowrap">{client.address}</TableCell>
                   <TableCell>{client.phoneNumber}</TableCell>

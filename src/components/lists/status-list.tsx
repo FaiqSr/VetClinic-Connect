@@ -91,7 +91,7 @@ export function StatusList() {
               ))}
             {!isLoading && statuses && statuses.length > 0 ? (
               statuses.map((status) => (
-                <TableRow key={status.id}>
+                <TableRow key={status.__path}>
                   <TableCell className="whitespace-nowrap">{status.patientId}</TableCell>
                   <TableCell>{status.temperature}</TableCell>
                   <TableCell>{status.heartRate}</TableCell>

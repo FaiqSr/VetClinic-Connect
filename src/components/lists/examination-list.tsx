@@ -91,7 +91,7 @@ export function ExaminationList() {
               ))}
             {!isLoading && examinations && examinations.length > 0 ? (
               examinations.map((exam) => (
-                <TableRow key={exam.id}>
+                <TableRow key={exam.__path}>
                   <TableCell className="whitespace-nowrap">{format(new Date(exam.date), 'PPP')}</TableCell>
                   <TableCell>{exam.patientId}</TableCell>
                   <TableCell>{exam.doctorId}</TableCell>
