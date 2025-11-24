@@ -180,7 +180,7 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
     }
   }
 
-  const diseaseOptions = diseases?.map(d => ({ value: d.diseaseId, label: `${d.diseaseId} - ${d.name}` })) || [];
+  const diseaseOptions = diseases?.map(d => ({ value: d.id, label: `${d.id} - ${d.name}` })) || [];
   
   const isLoading = isUserLoading || loadingDoctors || loadingPatients || loadingDiseases || isLoadingExaminations;
   
@@ -293,30 +293,28 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
                 )}
             />
             
-            <div className="md:col-span-2">
-            <Controller
-                control={form.control}
-                name="diseaseIds"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Penyakit</FormLabel>
-                    <FormControl>
-                        <Select
-                            {...field}
-                            isMulti
-                            options={diseaseOptions}
-                            isLoading={loadingDiseases}
-                            value={diseaseOptions.filter(opt => field.value?.includes(opt.value))}
-                            onChange={opts => field.onChange(opts.map(opt => opt.value))}
-                            className="text-sm"
-                            classNamePrefix="select"
-                        />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-                )}
+            <FormField
+              control={form.control}
+              name="diseaseIds"
+              render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                  <FormLabel>Penyakit</FormLabel>
+                  <FormControl>
+                      <Select
+                          {...field}
+                          isMulti
+                          options={diseaseOptions}
+                          isLoading={loadingDiseases}
+                          value={diseaseOptions.filter(opt => field.value?.includes(opt.value))}
+                          onChange={opts => field.onChange(opts?.map(opt => opt.value) || [])}
+                          className="text-sm"
+                          classNamePrefix="select"
+                      />
+                  </FormControl>
+                  <FormMessage />
+              </FormItem>
+              )}
             />
-            </div>
 
             <FormField
             control={form.control}
