@@ -381,7 +381,3 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
     </Wrapper>
   )
 }
-
-    
-
-    
