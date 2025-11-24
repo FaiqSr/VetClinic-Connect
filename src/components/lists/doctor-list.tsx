@@ -15,7 +15,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Skeleton } from '../ui/skeleton';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +28,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
+import FormDialog from '../forms/form-dialog';
+import DoctorForm from '../forms/doctor-form';
 
 
 interface Schedule {
@@ -43,6 +45,7 @@ interface Doctor {
   address: string;
   phoneNumber: string;
   schedule: Schedule[];
+  __path: string;
 }
 
 export function DoctorList() {
@@ -51,21 +54,21 @@ export function DoctorList() {
   const { toast } = useToast();
 
   const doctorsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || isUserLoading) return null;
     return collection(firestore, 'doctors');
-  }, [firestore]);
+  }, [firestore, isUserLoading]);
 
-  const { data: doctors, isLoading: isDoctorsLoading } = useCollection<Doctor>(doctorsQuery);
+  const { data: doctors, isLoading: isDoctorsLoading } = useCollection<Doctor>(doctorsQuery, { includePath: true });
 
-  const displayLoading = isDoctorsLoading || isUserLoading;
+  const isLoading = isDoctorsLoading || isUserLoading;
   
-  const handleDelete = (doctorId: string) => {
+  const handleDelete = (doctor: Doctor) => {
     if (!firestore) return;
-    const docRef = doc(firestore, 'doctors', doctorId);
+    const docRef = doc(firestore, doctor.__path);
     deleteDocumentNonBlocking(docRef);
     toast({
         title: "Data Dokter Dihapus",
-        description: `Dokter dengan ID ${doctorId} telah dihapus.`,
+        description: `Dokter dengan nama ${doctor.name} telah dihapus.`,
     });
   }
 
@@ -88,7 +91,7 @@ export function DoctorList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {displayLoading &&
+            {isLoading &&
               Array.from({ length: 3 }).map((_, i) => (
                 <TableRow key={i}>
                   <TableCell>
@@ -106,14 +109,14 @@ export function DoctorList() {
                   <TableCell>
                     <Skeleton className="h-4 w-[200px]" />
                   </TableCell>
-                   <TableCell>
-                    <Skeleton className="h-8 w-8 ml-auto" />
+                   <TableCell className="text-right">
+                    <Skeleton className="h-8 w-20 ml-auto" />
                   </TableCell>
                 </TableRow>
               ))}
-            {!displayLoading && doctors && doctors.length > 0 ? (
+            {!isLoading && doctors && doctors.length > 0 ? (
               doctors.map((doctor) => (
-                <TableRow key={doctor.id}>
+                <TableRow key={doctor.__path}>
                   <TableCell className="font-medium whitespace-nowrap">{doctor.name}</TableCell>
                   <TableCell>{doctor.gender}</TableCell>
                   <TableCell className="whitespace-nowrap">{doctor.address}</TableCell>
@@ -128,30 +131,43 @@ export function DoctorList() {
                     </div>
                   </TableCell>
                    <TableCell className="text-right">
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                    <div className="inline-flex gap-2">
+                      <FormDialog
+                        title="Edit Dokter"
+                        description="Ubah detail dokter di bawah ini."
+                        trigger={
+                          <Button variant="ghost" size="icon">
+                            <Pencil className="h-4 w-4" />
                           </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Tindakan ini tidak dapat diurungkan. Ini akan menghapus data dokter ({doctor.name}) secara permanen.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Batal</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(doctor.id)} className="bg-destructive hover:bg-destructive/90">Hapus</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                        }
+                      >
+                        <DoctorForm initialData={doctor} isEditMode />
+                      </FormDialog>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tindakan ini tidak dapat diurungkan. Ini akan menghapus data dokter ({doctor.name}) secara permanen.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(doctor)} className="bg-destructive hover:bg-destructive/90">Hapus</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
             ) : (
-              !displayLoading && (
+              !isLoading && (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center">
                     Tidak ada data dokter.

@@ -77,7 +77,7 @@ export default function RegisterForm({ onSwitchView }: RegisterFormProps) {
             <PawPrint className="w-12 h-12 text-primary" />
         </div>
         <CardTitle className="text-2xl">Daftar Akun Admin</CardTitle>
-        <CardDescription>Buat akun baru untuk mengelola VetClinic Connect.</CardDescription>
+        <CardDescription>Buat akun baru untuk mengelola Pawvet Connect.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>

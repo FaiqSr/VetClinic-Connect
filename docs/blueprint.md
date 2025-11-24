@@ -1,4 +1,4 @@
-# **App Name**: VetClinic Connect
+# **App Name**: Pawvet Connect
 
 ## Core Features:
 

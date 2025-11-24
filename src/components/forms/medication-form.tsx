@@ -35,14 +35,20 @@ const medicationFormSchema = z.object({
 
 type MedicationFormValues = z.infer<typeof medicationFormSchema>
 
-export default function MedicationForm() {
+interface MedicationFormProps {
+    initialData?: MedicationFormValues;
+    isEditMode?: boolean;
+    closeDialog?: () => void;
+}
+
+export default function MedicationForm({ initialData, isEditMode = false, closeDialog }: MedicationFormProps) {
   const { toast } = useToast()
   const { firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
 
   const form = useForm<MedicationFormValues>({
     resolver: zodResolver(medicationFormSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       id: "",
       name: "",
       price: 0,
@@ -63,93 +69,109 @@ export default function MedicationForm() {
     setDocumentNonBlocking(medicationRef, data, { merge: true });
 
     toast({
-      title: "Data Obat Tersimpan",
-      description: "Data obat telah berhasil disimpan ke Firestore.",
+      title: isEditMode ? "Data Obat Diperbarui" : "Data Obat Tersimpan",
+      description: `Data untuk obat ${data.name} telah berhasil disimpan.`,
     })
-    form.reset();
+    
+    if (closeDialog) {
+        closeDialog();
+    } else if (!isEditMode) {
+        form.reset();
+    }
+  }
+
+  const Wrapper = isEditMode ? 'div' : Card;
+  const wrapperProps = isEditMode ? {} : { className: "w-full max-w-4xl mx-auto" };
+
+  const formContent = (
+    <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className={isEditMode ? "space-y-8 p-1" : "space-y-8"}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <FormField
+            control={form.control}
+            name="id"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Kode Obat</FormLabel>
+                <FormControl>
+                    <Input placeholder="Contoh: OBAT-001" {...field} disabled={isEditMode} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Nama Obat</FormLabel>
+                <FormControl>
+                    <Input placeholder="Contoh: Paracetamol 500mg" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Jenis Obat</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Pilih jenis obat" />
+                    </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                    <SelectItem value="Tablet">Tablet</SelectItem>
+                    <SelectItem value="Kapsul">Kapsul</SelectItem>
+                    <SelectItem value="Sirup">Sirup</SelectItem>
+                    <SelectItem value="Salep">Salep</SelectItem>
+                    <SelectItem value="Injeksi">Injeksi</SelectItem>
+                    <SelectItem value="Lainnya">Lainnya</SelectItem>
+                    </SelectContent>
+                </Select>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="price"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Harga Obat (Rp)</FormLabel>
+                <FormControl>
+                    <Input type="number" placeholder="50000" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+        <CardFooter className="flex justify-end p-0 pt-6">
+            <Button type="submit" disabled={isUserLoading}>{isEditMode ? "Simpan Perubahan" : "Simpan Data Obat"}</Button>
+        </CardFooter>
+        </form>
+    </Form>
+  );
+
+  if (isEditMode) {
+    return formContent;
   }
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle>Form Inventaris Obat</CardTitle>
-        <CardDescription>Masukkan detail informasi mengenai stok obat-obatan.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <FormField
-                control={form.control}
-                name="id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Kode Obat</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Contoh: OBAT-001" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nama Obat</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Contoh: Paracetamol 500mg" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Jenis Obat</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih jenis obat" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Tablet">Tablet</SelectItem>
-                        <SelectItem value="Kapsul">Kapsul</SelectItem>
-                        <SelectItem value="Sirup">Sirup</SelectItem>
-                        <SelectItem value="Salep">Salep</SelectItem>
-                        <SelectItem value="Injeksi">Injeksi</SelectItem>
-                        <SelectItem value="Lainnya">Lainnya</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Harga Obat (Rp)</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="50000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <CardFooter className="flex justify-end p-0 pt-6">
-                <Button type="submit" disabled={isUserLoading}>Simpan Data Obat</Button>
-            </CardFooter>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+    <Wrapper {...wrapperProps}>
+        <CardHeader>
+            <CardTitle>Form Inventaris Obat</CardTitle>
+            <CardDescription>Masukkan detail informasi mengenai stok obat-obatan.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            {formContent}
+        </CardContent>
+    </Wrapper>
   )
 }
