@@ -62,7 +62,13 @@ export default function ExaminationDetails({ examination }: ExaminationDetailsPr
   const DetailItem = ({ label, value, isLoading }: { label: string; value: React.ReactNode; isLoading?: boolean }) => (
     <div>
       <p className="text-sm font-medium text-muted-foreground">{label}</p>
-      {isLoading ? <Skeleton className="h-5 w-3/4 mt-1" /> : <p className="text-base">{value || '-'}</p>}
+      {isLoading ? (
+        <Skeleton className="h-5 w-3/4 mt-1" />
+      ) : typeof value === 'string' || value === null || value === undefined ? (
+        <p className="text-base">{value || '-'}</p>
+      ) : (
+        value
+      )}
     </div>
   );
 
@@ -104,7 +110,7 @@ export default function ExaminationDetails({ examination }: ExaminationDetailsPr
             <div className="flex flex-wrap gap-2 mt-1">
                 {diseases && diseases.length > 0
                     ? diseases.map(d => <Badge key={d.id} variant="secondary">{d.name}</Badge>)
-                    : <p className="text-base">-</p>
+                    : '-'
                 }
             </div>
         } isLoading={isLoading} />
