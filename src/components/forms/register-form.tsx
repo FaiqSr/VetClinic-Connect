@@ -19,10 +19,9 @@ import {
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { useAuth, setDocumentNonBlocking } from "@/firebase"
+import { useAuth } from "@/firebase"
 import { Spinner } from "../ui/spinner"
 import { useFirebase } from "@/firebase"
-import { doc } from "firebase/firestore"
 
 const registerFormSchema = z.object({
   name: z.string().min(1, "Nama harus diisi."),
@@ -54,21 +53,7 @@ export default function RegisterForm({ onSwitchView }: RegisterFormProps) {
   async function onSubmit(data: RegisterFormValues) {
     setIsLoading(true)
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password)
-      const user = userCredential.user;
-
-      // Create a doctor profile with the same UID
-      const doctorRef = doc(firestore, "doctors", user.uid);
-      const doctorData = {
-        id: user.uid,
-        name: data.name,
-        email: data.email,
-        gender: "", 
-        address: "", 
-        phoneNumber: "",
-        schedule: [],
-      };
-      setDocumentNonBlocking(doctorRef, doctorData, { merge: true });
+      await createUserWithEmailAndPassword(auth, data.email, data.password)
 
       toast({
         title: "Pendaftaran Berhasil",
