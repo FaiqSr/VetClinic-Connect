@@ -41,7 +41,7 @@ import { useFirebase, setDocumentNonBlocking, useUser, useCollection, useMemoFir
 // Schemas for fetching data
 interface Doctor { id: string; name: string; }
 interface Patient { id: string; name: string; }
-interface Disease { id: string; name: string; }
+interface Disease { diseaseId: string; name: string; }
 interface PresentStatus { id: string; behavior: string; date: string; }
 
 
@@ -180,7 +180,7 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
     }
   }
 
-  const diseaseOptions = diseases?.map(d => ({ value: d.id, label: `${d.id} - ${d.name}` })) || [];
+  const diseaseOptions = diseases?.map(d => ({ value: d.diseaseId, label: `${d.diseaseId} - ${d.name}` })) || [];
   
   const isLoading = isUserLoading || loadingDoctors || loadingPatients || loadingDiseases || isLoadingExaminations;
   
@@ -381,5 +381,7 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
     </Wrapper>
   )
 }
+
+    
 
     

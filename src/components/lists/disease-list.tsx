@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -21,7 +22,7 @@ import FormDialog from '../forms/form-dialog';
 import DiseaseForm from '../forms/disease-form';
 
 interface Disease {
-  id: string;
+  diseaseId: string;
   name: string;
   description: string;
   __path: string;
@@ -80,7 +81,7 @@ export function DiseaseList() {
             {!isLoading && diseases && diseases.length > 0 ? (
               diseases.map((disease) => (
                 <TableRow key={disease.__path}>
-                  <TableCell className="font-medium whitespace-nowrap">{disease.id}</TableCell>
+                  <TableCell className="font-medium whitespace-nowrap">{disease.diseaseId}</TableCell>
                   <TableCell className="font-medium whitespace-nowrap">{disease.name}</TableCell>
                   <TableCell>{disease.description}</TableCell>
                   <TableCell className="text-right">
@@ -134,3 +135,5 @@ export function DiseaseList() {
     </Card>
   );
 }
+
+    

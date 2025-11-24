@@ -22,7 +22,7 @@ interface Examination {
 
 interface Doctor { name: string; }
 interface Patient { name: string; species: string; breed: string; }
-interface Disease { id: string; name: string; }
+interface Disease { diseaseId: string; name: string; }
 interface PresentStatus {
     actions: string;
     behavior: string;
@@ -48,7 +48,7 @@ export default function ExaminationDetails({ examination }: ExaminationDetailsPr
   const statusRef = useMemoFirebase(() => firestore ? doc(firestore, `doctors/${examination.doctorId}/patients/${examination.patientId}/presentStatuses`, examination.presentStatusId) : null, [firestore, examination.doctorId, examination.patientId, examination.presentStatusId]);
   const diseasesQuery = useMemoFirebase(() => {
     if (!firestore || !examination.diseaseIds || examination.diseaseIds.length === 0) return null;
-    return query(collection(firestore, 'diseases'), where('id', 'in', examination.diseaseIds));
+    return query(collection(firestore, 'diseases'), where('diseaseId', 'in', examination.diseaseIds));
   }, [firestore, examination.diseaseIds]);
 
   // Fetch the data
@@ -109,7 +109,7 @@ export default function ExaminationDetails({ examination }: ExaminationDetailsPr
         <DetailItem label="Teridentifikasi Penyakit" value={
             <div className="flex flex-wrap gap-2 mt-1">
                 {diseases && diseases.length > 0
-                    ? diseases.map(d => <Badge key={d.id} variant="secondary">{d.name}</Badge>)
+                    ? diseases.map(d => <Badge key={d.diseaseId} variant="secondary">{d.name}</Badge>)
                     : '-'
                 }
             </div>
@@ -120,3 +120,5 @@ export default function ExaminationDetails({ examination }: ExaminationDetailsPr
     </div>
   );
 }
+
+    

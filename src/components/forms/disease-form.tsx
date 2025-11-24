@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { useFirebase, setDocumentNonBlocking, useUser, useCollection, useMemoFirebase } from "@/firebase"
 
 const diseaseFormSchema = z.object({
-  id: z.string().min(1, "Kode penyakit harus diisi."),
+  diseaseId: z.string().min(1, "Kode penyakit harus diisi."),
   name: z.string().min(1, "Nama penyakit harus diisi."),
   description: z.string().min(1, "Keterangan harus diisi."),
 })
@@ -36,7 +36,7 @@ interface DiseaseFormProps {
 }
 
 interface Disease {
-    id: string;
+    diseaseId: string;
 }
 
 export default function DiseaseForm({ initialData, isEditMode = false, closeDialog }: DiseaseFormProps) {
@@ -47,7 +47,7 @@ export default function DiseaseForm({ initialData, isEditMode = false, closeDial
   const form = useForm<DiseaseFormValues>({
     resolver: zodResolver(diseaseFormSchema),
     defaultValues: initialData || {
-      id: "",
+      diseaseId: "",
       name: "",
       description: "",
     },
@@ -66,15 +66,15 @@ export default function DiseaseForm({ initialData, isEditMode = false, closeDial
       return;
     }
 
-    if (!isEditMode && diseases?.some(d => d.id === data.id)) {
-        form.setError("id", {
+    if (!isEditMode && diseases?.some(d => d.diseaseId === data.diseaseId)) {
+        form.setError("diseaseId", {
             type: "manual",
             message: "ID Penyakit sudah digunakan.",
         });
         return;
     }
 
-    const diseaseRef = doc(firestore, "diseases", data.id);
+    const diseaseRef = doc(firestore, "diseases", data.diseaseId);
     setDocumentNonBlocking(diseaseRef, data, { merge: true });
 
     toast({
@@ -99,7 +99,7 @@ export default function DiseaseForm({ initialData, isEditMode = false, closeDial
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <FormField
                 control={form.control}
-                name="id"
+                name="diseaseId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Kode Penyakit</FormLabel>
@@ -164,5 +164,7 @@ export default function DiseaseForm({ initialData, isEditMode = false, closeDial
     </Wrapper>
   )
 }
+
+    
 
     

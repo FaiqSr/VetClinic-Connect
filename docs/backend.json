@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Patient": {
@@ -301,7 +302,7 @@
       "type": "object",
       "description": "Represents a disease.",
       "properties": {
-        "id": {
+        "diseaseId": {
           "type": "string",
           "description": "Unique identifier for the Disease entity."
         },
@@ -315,7 +316,7 @@
         }
       },
       "required": [
-        "id",
+        "diseaseId",
         "name",
         "description"
       ]
@@ -473,3 +474,5 @@
     "reasoning": "The Firestore data structure is designed to manage veterinary clinic records efficiently.  The structure leverages path-based ownership for `patients`, `clients`, `presentStatuses`, and `examinations` associated with a specific `doctor`. This approach ensures Authorization Independence by storing relevant access control information directly within each document. The `doctors` collection stores doctor profiles, while `medications` and `diseases` are stored in root-level collections since they do not have a direct hierarchical relationship with users and are globally accessible.\n\nAuthorization Independence:\n*   Patient, Client, PresentStatus, and Examination data is nested under the doctor's ID.  Access to this data is controlled by the user ID, and security rules can directly check `request.auth.uid` against the `doctorId` in the path without needing `get()` calls.\n\nQAPs Support:\n*   Segregation:  Data with different access needs is stored in separate collections (e.g., `doctors`, `medications`, `diseases`). This simplifies security rules and avoids the need for complex filtering.\n*   Path-Based Ownership: The use of `/doctors/{doctorId}/patients/{patientId}` creates a clear ownership model, making list operations secure as they are scoped to a specific doctor."
   }
 }
+
+    
