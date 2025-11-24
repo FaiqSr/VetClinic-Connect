@@ -26,6 +26,7 @@ interface Disease {
   name: string;
   description: string;
   __path: string;
+  id: string;
 }
 
 export function DiseaseList() {
@@ -81,7 +82,7 @@ export function DiseaseList() {
             {!isLoading && diseases && diseases.length > 0 ? (
               diseases.map((disease) => (
                 <TableRow key={disease.__path}>
-                  <TableCell className="font-medium whitespace-nowrap">{disease.diseaseId}</TableCell>
+                  <TableCell className="font-medium whitespace-nowrap">{disease.id}</TableCell>
                   <TableCell className="font-medium whitespace-nowrap">{disease.name}</TableCell>
                   <TableCell>{disease.description}</TableCell>
                   <TableCell className="text-right">
@@ -135,5 +136,3 @@ export function DiseaseList() {
     </Card>
   );
 }
-
-    
