@@ -61,6 +61,7 @@ export function DiseaseList() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>ID Penyakit</TableHead>
               <TableHead>Nama Penyakit</TableHead>
               <TableHead>Deskripsi</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
@@ -70,6 +71,7 @@ export function DiseaseList() {
             {isLoading &&
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
+                  <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[300px]" /></TableCell>
                   <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
@@ -78,6 +80,7 @@ export function DiseaseList() {
             {!isLoading && diseases && diseases.length > 0 ? (
               diseases.map((disease) => (
                 <TableRow key={disease.__path}>
+                  <TableCell className="font-medium whitespace-nowrap">{disease.id}</TableCell>
                   <TableCell className="font-medium whitespace-nowrap">{disease.name}</TableCell>
                   <TableCell>{disease.description}</TableCell>
                   <TableCell className="text-right">
@@ -119,7 +122,7 @@ export function DiseaseList() {
             ) : (
               !isLoading && (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center">
+                  <TableCell colSpan={4} className="text-center">
                     Tidak ada data penyakit.
                   </TableCell>
                 </TableRow>

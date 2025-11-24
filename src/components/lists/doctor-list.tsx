@@ -82,6 +82,7 @@ export function DoctorList() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>ID Dokter</TableHead>
               <TableHead>Nama</TableHead>
               <TableHead>Jenis Kelamin</TableHead>
               <TableHead>Alamat</TableHead>
@@ -94,6 +95,9 @@ export function DoctorList() {
             {isLoading &&
               Array.from({ length: 3 }).map((_, i) => (
                 <TableRow key={i}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-[100px]" />
+                  </TableCell>
                   <TableCell>
                     <Skeleton className="h-4 w-[150px]" />
                   </TableCell>
@@ -117,6 +121,7 @@ export function DoctorList() {
             {!isLoading && doctors && doctors.length > 0 ? (
               doctors.map((doctor) => (
                 <TableRow key={doctor.__path}>
+                  <TableCell className="font-medium whitespace-nowrap">{doctor.id}</TableCell>
                   <TableCell className="font-medium whitespace-nowrap">{doctor.name}</TableCell>
                   <TableCell>{doctor.gender}</TableCell>
                   <TableCell className="whitespace-nowrap">{doctor.address}</TableCell>
@@ -169,7 +174,7 @@ export function DoctorList() {
             ) : (
               !isLoading && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">
+                  <TableCell colSpan={7} className="text-center">
                     Tidak ada data dokter.
                   </TableCell>
                 </TableRow>

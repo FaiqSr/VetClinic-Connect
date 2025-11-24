@@ -62,6 +62,7 @@ export function MedicationList() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>ID Obat</TableHead>
               <TableHead>Nama Obat</TableHead>
               <TableHead>Jenis</TableHead>
               <TableHead>Harga (Rp)</TableHead>
@@ -72,6 +73,7 @@ export function MedicationList() {
             {isLoading &&
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
+                  <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
@@ -81,6 +83,7 @@ export function MedicationList() {
             {!isLoading && medications && medications.length > 0 ? (
               medications.map((med) => (
                 <TableRow key={med.__path}>
+                  <TableCell className="font-medium whitespace-nowrap">{med.id}</TableCell>
                   <TableCell className="font-medium whitespace-nowrap">{med.name}</TableCell>
                   <TableCell>{med.type}</TableCell>
                   <TableCell>{med.price.toLocaleString('id-ID')}</TableCell>
@@ -123,7 +126,7 @@ export function MedicationList() {
             ) : (
               !isLoading && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">
+                  <TableCell colSpan={5} className="text-center">
                     Tidak ada data obat.
                   </TableCell>
                 </TableRow>

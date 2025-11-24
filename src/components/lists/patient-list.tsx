@@ -65,6 +65,7 @@ export function PatientList() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>ID Pasien</TableHead>
               <TableHead>Nama</TableHead>
               <TableHead>Jenis Hewan</TableHead>
               <TableHead>Ras</TableHead>
@@ -79,6 +80,7 @@ export function PatientList() {
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
                   <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[50px]" /></TableCell>
@@ -90,6 +92,7 @@ export function PatientList() {
             {!isLoading && patients && patients.length > 0 ? (
               patients.map((patient) => (
                 <TableRow key={patient.__path}>
+                  <TableCell className="font-medium whitespace-nowrap">{patient.id}</TableCell>
                   <TableCell className="font-medium whitespace-nowrap">{patient.name}</TableCell>
                   <TableCell className="whitespace-nowrap">{patient.species}</TableCell>
                   <TableCell className="whitespace-nowrap">{patient.breed}</TableCell>
@@ -135,7 +138,7 @@ export function PatientList() {
             ) : (
               !isLoading && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center">
+                  <TableCell colSpan={8} className="text-center">
                     Tidak ada data pasien.
                   </TableCell>
                 </TableRow>
