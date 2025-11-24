@@ -301,20 +301,15 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
                 <FormItem>
                     <FormLabel>Penyakit</FormLabel>
                     <FormControl>
-                        <Controller
-                            name="diseaseIds"
-                            control={form.control}
-                            render={({ field }) => (
-                                <Select
-                                    isMulti
-                                    options={diseaseOptions}
-                                    isLoading={loadingDiseases}
-                                    value={diseaseOptions.filter(opt => field.value?.includes(opt.value))}
-                                    onChange={opts => field.onChange(opts.map(opt => opt.value))}
-                                    className="text-sm"
-                                    classNamePrefix="select"
-                                />
-                            )}
+                        <Select
+                            {...field}
+                            isMulti
+                            options={diseaseOptions}
+                            isLoading={loadingDiseases}
+                            value={diseaseOptions.filter(opt => field.value?.includes(opt.value))}
+                            onChange={opts => field.onChange(opts.map(opt => opt.value))}
+                            className="text-sm"
+                            classNamePrefix="select"
                         />
                     </FormControl>
                     <FormMessage />
