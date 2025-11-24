@@ -22,7 +22,7 @@ interface Examination {
 
 interface Doctor { name: string; }
 interface Patient { name: string; species: string; breed: string; }
-interface Disease { diseaseId: string; name: string; }
+interface Disease { diseaseId: string; name: string; id: string; }
 interface PresentStatus {
     actions: string;
     behavior: string;
@@ -42,10 +42,16 @@ interface ExaminationDetailsProps {
 export default function ExaminationDetails({ examination }: ExaminationDetailsProps) {
   const { firestore } = useFirebase();
 
+  // Extract correct doctorId and patientId from the examination's path
+  const pathParts = examination.__path.split('/');
+  const doctorId = pathParts[1];
+  const patientId = pathParts[3];
+
   // Memoize document and query references to prevent re-renders
-  const doctorRef = useMemoFirebase(() => firestore ? doc(firestore, 'doctors', examination.doctorId) : null, [firestore, examination.doctorId]);
-  const patientRef = useMemoFirebase(() => firestore ? doc(firestore, 'doctors', examination.doctorId, 'patients', examination.patientId) : null, [firestore, examination.doctorId, examination.patientId]);
-  const statusRef = useMemoFirebase(() => firestore ? doc(firestore, 'doctors', examination.doctorId, 'patients', examination.patientId, 'presentStatuses', examination.presentStatusId) : null, [firestore, examination.doctorId, examination.patientId, examination.presentStatusId]);
+  const doctorRef = useMemoFirebase(() => firestore ? doc(firestore, 'doctors', doctorId) : null, [firestore, doctorId]);
+  const patientRef = useMemoFirebase(() => firestore ? doc(firestore, 'doctors', doctorId, 'patients', patientId) : null, [firestore, doctorId, patientId]);
+  const statusRef = useMemoFirebase(() => firestore ? doc(firestore, 'doctors', doctorId, 'patients', patientId, 'presentStatuses', examination.presentStatusId) : null, [firestore, doctorId, patientId, examination.presentStatusId]);
+  
   const diseasesQuery = useMemoFirebase(() => {
     if (!firestore || !examination.diseaseIds || examination.diseaseIds.length === 0) return null;
     return query(collection(firestore, 'diseases'), where(documentId(), 'in', examination.diseaseIds));
