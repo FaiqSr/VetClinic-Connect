@@ -44,8 +44,8 @@ export default function ExaminationDetails({ examination }: ExaminationDetailsPr
 
   // Memoize document and query references to prevent re-renders
   const doctorRef = useMemoFirebase(() => firestore ? doc(firestore, 'doctors', examination.doctorId) : null, [firestore, examination.doctorId]);
-  const patientRef = useMemoFirebase(() => firestore ? doc(firestore, `doctors/${examination.doctorId}/patients`, examination.patientId) : null, [firestore, examination.doctorId, examination.patientId]);
-  const statusRef = useMemoFirebase(() => firestore ? doc(firestore, `doctors/${examination.doctorId}/patients/${examination.patientId}/presentStatuses`, examination.presentStatusId) : null, [firestore, examination.doctorId, examination.patientId, examination.presentStatusId]);
+  const patientRef = useMemoFirebase(() => firestore ? doc(firestore, 'doctors', examination.doctorId, 'patients', examination.patientId) : null, [firestore, examination.doctorId, examination.patientId]);
+  const statusRef = useMemoFirebase(() => firestore ? doc(firestore, 'doctors', examination.doctorId, 'patients', examination.patientId, 'presentStatuses', examination.presentStatusId) : null, [firestore, examination.doctorId, examination.patientId, examination.presentStatusId]);
   const diseasesQuery = useMemoFirebase(() => {
     if (!firestore || !examination.diseaseIds || examination.diseaseIds.length === 0) return null;
     return query(collection(firestore, 'diseases'), where(documentId(), 'in', examination.diseaseIds));
@@ -109,7 +109,7 @@ export default function ExaminationDetails({ examination }: ExaminationDetailsPr
         <DetailItem label="Teridentifikasi Penyakit" value={
             <div className="flex flex-wrap gap-2 mt-1">
                 {diseases && diseases.length > 0
-                    ? diseases.map(d => <Badge key={d.id} variant="secondary">{d.name}</Badge>)
+                    ? diseases.map(d => <Badge key={d.diseaseId} variant="secondary">{d.name}</Badge>)
                     : '-'
                 }
             </div>
