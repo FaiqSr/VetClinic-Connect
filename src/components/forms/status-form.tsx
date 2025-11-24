@@ -67,6 +67,9 @@ export default function StatusForm({ initialData, isEditMode = false, closeDialo
       behavior: "",
       hydration: "",
       posture: "",
+      temperature: 0,
+      heartRate: 0,
+      respiratoryRate: 0,
     },
   })
   
