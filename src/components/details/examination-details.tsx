@@ -109,7 +109,7 @@ export default function ExaminationDetails({ examination }: ExaminationDetailsPr
         <DetailItem label="Teridentifikasi Penyakit" value={
             <div className="flex flex-wrap gap-2 mt-1">
                 {diseases && diseases.length > 0
-                    ? diseases.map(d => <Badge key={d.diseaseId} variant="secondary">{d.name}</Badge>)
+                    ? diseases.map(d => <Badge key={d.id} variant="secondary">{d.name}</Badge>)
                     : '-'
                 }
             </div>
