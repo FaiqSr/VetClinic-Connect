@@ -15,12 +15,13 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Skeleton } from '../ui/skeleton';
 import { format } from 'date-fns';
 import { Button } from '../ui/button';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import FormDialog from '../forms/form-dialog';
 import ExaminationForm from '../forms/examination-form';
 import { Badge } from '../ui/badge';
+import ExaminationDetails from '../details/examination-details';
 
 interface Examination {
   id: string;
@@ -105,6 +106,17 @@ export function ExaminationList() {
                   <TableCell>{exam.treatment}</TableCell>
                   <TableCell className="text-right">
                      <div className="inline-flex gap-2">
+                       <FormDialog
+                        title="Lihat Detail Pemeriksaan"
+                        description="Detail lengkap dari catatan pemeriksaan."
+                        trigger={
+                          <Button variant="ghost" size="icon">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        }
+                       >
+                         <ExaminationDetails examination={exam} />
+                       </FormDialog>
                        <FormDialog
                         title="Edit Pemeriksaan"
                         description="Ubah detail pemeriksaan di bawah ini."
