@@ -1,9 +1,10 @@
+
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { collection, doc } from "firebase/firestore"
+import { collection, collectionGroup, doc } from "firebase/firestore"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -15,10 +16,17 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { useFirebase, setDocumentNonBlocking, useUser } from "@/firebase"
+import { useFirebase, setDocumentNonBlocking, useUser, useCollection, useMemoFirebase } from "@/firebase"
 
 const statusFormSchema = z.object({
   id: z.string().optional(),
@@ -33,6 +41,11 @@ const statusFormSchema = z.object({
 })
 
 type StatusFormValues = z.infer<typeof statusFormSchema>
+
+interface Patient {
+  id: string;
+  name: string;
+}
 
 interface StatusFormProps {
     initialData?: StatusFormValues;
@@ -55,6 +68,10 @@ export default function StatusForm({ initialData, isEditMode = false, closeDialo
       posture: "",
     },
   })
+  
+  const patientsQuery = useMemoFirebase(() => firestore ? collectionGroup(firestore, 'patients') : null, [firestore]);
+  const { data: patients, isLoading: isLoadingPatients } = useCollection<Patient>(patientsQuery);
+
 
   function onSubmit(data: StatusFormValues) {
     if (!firestore || !user) {
@@ -86,22 +103,30 @@ export default function StatusForm({ initialData, isEditMode = false, closeDialo
 
   const Wrapper = isEditMode ? 'div' : Card;
   const wrapperProps = isEditMode ? {} : { className: "w-full max-w-4xl mx-auto" };
+  const isLoading = isUserLoading || isLoadingPatients;
 
   const formContent = (
      <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className={isEditMode ? "space-y-8 p-1" : "space-y-8"}>
             <FormField
-            control={form.control}
-            name="patientId"
-            render={({ field }) => (
+              control={form.control}
+              name="patientId"
+              render={({ field }) => (
                 <FormItem>
-                <FormLabel>ID Pasien</FormLabel>
-                <FormControl>
-                    <Input placeholder="Masukkan ID Pasien" {...field} disabled={isEditMode} />
-                </FormControl>
-                <FormMessage />
+                  <FormLabel>Pasien</FormLabel>
+                   <Select onValueChange={field.onChange} value={field.value} disabled={isLoading || isEditMode}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih Pasien" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {patients?.map(p => <SelectItem key={p.id} value={p.id}>{p.name} ({p.id})</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
                 </FormItem>
-            )}
+              )}
             />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <FormField
@@ -199,7 +224,7 @@ export default function StatusForm({ initialData, isEditMode = false, closeDialo
             />
         </div>
         <CardFooter className="flex justify-end p-0 pt-6">
-            <Button type="submit" disabled={isUserLoading}>{isEditMode ? "Simpan Perubahan" : "Simpan Data Status"}</Button>
+            <Button type="submit" disabled={isLoading}>{isEditMode ? "Simpan Perubahan" : "Simpan Data Status"}</Button>
         </CardFooter>
         </form>
     </Form>
