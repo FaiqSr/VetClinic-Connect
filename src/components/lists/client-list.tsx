@@ -66,6 +66,7 @@ export function ClientList() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>ID Klien</TableHead>
               <TableHead>Nama Klien</TableHead>
               <TableHead>Alamat</TableHead>
               <TableHead>No. HP</TableHead>
@@ -78,6 +79,7 @@ export function ClientList() {
             {displayLoading &&
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
+                  <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
@@ -89,6 +91,7 @@ export function ClientList() {
             {!displayLoading && clients && clients.length > 0 ? (
               clients.map((client) => (
                 <TableRow key={client.__path}>
+                  <TableCell className="font-medium whitespace-nowrap">{client.id}</TableCell>
                   <TableCell className="font-medium whitespace-nowrap">{client.name}</TableCell>
                   <TableCell className="whitespace-nowrap">{client.address}</TableCell>
                   <TableCell>{client.phoneNumber}</TableCell>
@@ -136,7 +139,7 @@ export function ClientList() {
             ) : (
               !displayLoading && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">
+                  <TableCell colSpan={7} className="text-center">
                     Tidak ada data klien.
                   </TableCell>
                 </TableRow>

@@ -41,7 +41,7 @@ import { useFirebase, setDocumentNonBlocking, useUser, useCollection, useMemoFir
 // Schemas for fetching data
 interface Doctor { id: string; name: string; }
 interface Patient { id: string; name: string; }
-interface Disease { id: string; name: string; }
+interface Disease { diseaseId: string; name: string; }
 interface PresentStatus { id: string; behavior: string; date: string; }
 
 
@@ -293,35 +293,28 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
                 )}
             />
             
-            <div className="md:col-span-2">
             <FormField
-                control={form.control}
-                name="diseaseIds"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Penyakit</FormLabel>
-                    <FormControl>
-                        <Controller
-                            name="diseaseIds"
-                            control={form.control}
-                            render={({ field }) => (
-                                <Select
-                                    isMulti
-                                    options={diseaseOptions}
-                                    isLoading={loadingDiseases}
-                                    value={diseaseOptions.filter(opt => field.value?.includes(opt.value))}
-                                    onChange={opts => field.onChange(opts.map(opt => opt.value))}
-                                    className="text-sm"
-                                    classNamePrefix="select"
-                                />
-                            )}
-                        />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-                )}
+              control={form.control}
+              name="diseaseIds"
+              render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                  <FormLabel>Penyakit</FormLabel>
+                  <FormControl>
+                      <Select
+                          {...field}
+                          isMulti
+                          options={diseaseOptions}
+                          isLoading={loadingDiseases}
+                          value={diseaseOptions.filter(opt => field.value?.includes(opt.value))}
+                          onChange={opts => field.onChange(opts?.map(opt => opt.value) || [])}
+                          className="text-sm"
+                          classNamePrefix="select"
+                      />
+                  </FormControl>
+                  <FormMessage />
+              </FormItem>
+              )}
             />
-            </div>
 
             <FormField
             control={form.control}
@@ -381,5 +374,3 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
     </Wrapper>
   )
 }
-
-    
