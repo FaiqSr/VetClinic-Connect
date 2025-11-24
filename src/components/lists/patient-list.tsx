@@ -1,8 +1,8 @@
 'use client';
 
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { useFirebase, useMemoFirebase, useUser } from '@/firebase';
-import { collectionGroup } from 'firebase/firestore';
+import { useFirebase, useMemoFirebase, useUser, deleteDocumentNonBlocking } from '@/firebase';
+import { collectionGroup, doc } from 'firebase/firestore';
 import {
   Table,
   TableBody,
@@ -13,6 +13,12 @@ import {
 } from '@/components/ui/table';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
+import { Button } from '../ui/button';
+import { Pencil, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import FormDialog from '../forms/form-dialog';
+import PatientForm from '../forms/patient-form';
 
 interface Patient {
   id: string;
@@ -22,20 +28,32 @@ interface Patient {
   age: number;
   weight: number;
   gender: string;
+  __path: string;
 }
 
 export function PatientList() {
   const { firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
+  const { toast } = useToast();
 
   const patientsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || isUserLoading) return null;
     return collectionGroup(firestore, 'patients');
-  }, [firestore, user]);
+  }, [firestore, isUserLoading]);
 
-  const { data: patients, isLoading: isPatientsLoading } = useCollection<Patient>(patientsQuery);
+  const { data: patients, isLoading: isPatientsLoading } = useCollection<Patient>(patientsQuery, { includePath: true });
 
-  const displayLoading = isPatientsLoading || isUserLoading;
+  const isLoading = isPatientsLoading || isUserLoading;
+
+  const handleDelete = (patient: Patient) => {
+    if (!firestore || !patient.__path) return;
+    const docRef = doc(firestore, patient.__path);
+    deleteDocumentNonBlocking(docRef);
+    toast({
+        title: "Data Pasien Dihapus",
+        description: `Pasien dengan nama ${patient.name} telah dihapus.`,
+    });
+  }
 
   return (
     <Card>
@@ -53,10 +71,11 @@ export function PatientList() {
               <TableHead>Umur (Tahun)</TableHead>
               <TableHead>Berat (kg)</TableHead>
               <TableHead>Jenis Kelamin</TableHead>
+              <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {displayLoading &&
+            {isLoading &&
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
                   <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
@@ -65,9 +84,10 @@ export function PatientList() {
                   <TableCell><Skeleton className="h-4 w-[50px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[50px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                 </TableRow>
               ))}
-            {!displayLoading && patients && patients.length > 0 ? (
+            {!isLoading && patients && patients.length > 0 ? (
               patients.map((patient) => (
                 <TableRow key={patient.id}>
                   <TableCell className="font-medium whitespace-nowrap">{patient.name}</TableCell>
@@ -76,12 +96,46 @@ export function PatientList() {
                   <TableCell>{patient.age}</TableCell>
                   <TableCell>{patient.weight}</TableCell>
                   <TableCell>{patient.gender}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="inline-flex gap-2">
+                       <FormDialog
+                        title="Edit Pasien"
+                        description="Ubah detail pasien di bawah ini."
+                        trigger={
+                          <Button variant="ghost" size="icon">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        }
+                      >
+                        <PatientForm initialData={patient} isEditMode />
+                      </FormDialog>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tindakan ini tidak dapat diurungkan. Ini akan menghapus data pasien ({patient.name}) secara permanen.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(patient)} className="bg-destructive hover:bg-destructive/90">Hapus</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
-              !displayLoading && (
+              !isLoading && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">
+                  <TableCell colSpan={7} className="text-center">
                     Tidak ada data pasien.
                   </TableCell>
                 </TableRow>

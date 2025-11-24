@@ -28,14 +28,20 @@ const diseaseFormSchema = z.object({
 
 type DiseaseFormValues = z.infer<typeof diseaseFormSchema>
 
-export default function DiseaseForm() {
+interface DiseaseFormProps {
+  initialData?: DiseaseFormValues;
+  isEditMode?: boolean;
+  closeDialog?: () => void;
+}
+
+export default function DiseaseForm({ initialData, isEditMode = false, closeDialog }: DiseaseFormProps) {
   const { toast } = useToast()
   const { firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
 
   const form = useForm<DiseaseFormValues>({
     resolver: zodResolver(diseaseFormSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       id: "",
       name: "",
       description: "",
@@ -56,21 +62,23 @@ export default function DiseaseForm() {
     setDocumentNonBlocking(diseaseRef, data, { merge: true });
 
     toast({
-      title: "Data Penyakit Tersimpan",
-      description: "Data penyakit telah berhasil disimpan ke Firestore.",
+      title: isEditMode ? "Data Penyakit Diperbarui" : "Data Penyakit Tersimpan",
+      description: `Data untuk penyakit ${data.name} telah berhasil disimpan.`,
     })
-    form.reset();
-  }
 
-  return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle>Form Informasi Penyakit</CardTitle>
-        <CardDescription>Masukkan detail mengenai jenis-jenis penyakit.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+    if (closeDialog) {
+        closeDialog();
+    } else if (!isEditMode) {
+        form.reset();
+    }
+  }
+  
+  const Wrapper = isEditMode ? 'div' : Card;
+  const wrapperProps = isEditMode ? {} : { className: "w-full max-w-4xl mx-auto" };
+
+  const formContent = (
+     <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className={isEditMode ? "space-y-8 p-1" : "space-y-8"}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <FormField
                 control={form.control}
@@ -79,7 +87,7 @@ export default function DiseaseForm() {
                   <FormItem>
                     <FormLabel>Kode Penyakit</FormLabel>
                     <FormControl>
-                      <Input placeholder="Contoh: PEN-001" {...field} />
+                      <Input placeholder="Contoh: PEN-001" {...field} disabled={isEditMode} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -117,11 +125,25 @@ export default function DiseaseForm() {
               />
             </div>
             <CardFooter className="flex justify-end p-0 pt-6">
-                <Button type="submit" disabled={isUserLoading}>Simpan Data Penyakit</Button>
+                <Button type="submit" disabled={isUserLoading}>{isEditMode ? "Simpan Perubahan" : "Simpan Data Penyakit"}</Button>
             </CardFooter>
           </form>
         </Form>
+  );
+
+  if (isEditMode) {
+    return formContent;
+  }
+
+  return (
+    <Wrapper {...wrapperProps}>
+      <CardHeader>
+        <CardTitle>Form Informasi Penyakit</CardTitle>
+        <CardDescription>Masukkan detail mengenai jenis-jenis penyakit.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {formContent}
       </CardContent>
-    </Card>
+    </Wrapper>
   )
 }

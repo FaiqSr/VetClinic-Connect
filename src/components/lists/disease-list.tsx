@@ -1,8 +1,8 @@
 'use client';
 
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { useFirebase, useMemoFirebase, useUser } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useFirebase, useMemoFirebase, useUser, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import {
   Table,
   TableBody,
@@ -13,6 +13,12 @@ import {
 } from '@/components/ui/table';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
+import { Button } from '../ui/button';
+import { Pencil, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import FormDialog from '../forms/form-dialog';
+import DiseaseForm from '../forms/disease-form';
 
 interface Disease {
   id: string;
@@ -23,15 +29,26 @@ interface Disease {
 export function DiseaseList() {
   const { firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
+  const { toast } = useToast();
 
   const diseasesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || isUserLoading) return null;
     return collection(firestore, 'diseases');
-  }, [firestore]);
+  }, [firestore, isUserLoading]);
 
   const { data: diseases, isLoading: isDiseasesLoading } = useCollection<Disease>(diseasesQuery);
 
-  const displayLoading = isDiseasesLoading || isUserLoading;
+  const isLoading = isDiseasesLoading || isUserLoading;
+
+  const handleDelete = (diseaseId: string, diseaseName: string) => {
+    if (!firestore) return;
+    const docRef = doc(firestore, 'diseases', diseaseId);
+    deleteDocumentNonBlocking(docRef);
+    toast({
+        title: "Data Penyakit Dihapus",
+        description: `Penyakit ${diseaseName} telah dihapus.`,
+    });
+  }
 
   return (
     <Card>
@@ -45,27 +62,63 @@ export function DiseaseList() {
             <TableRow>
               <TableHead>Nama Penyakit</TableHead>
               <TableHead>Deskripsi</TableHead>
+              <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {displayLoading &&
+            {isLoading &&
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
                   <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[300px]" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                 </TableRow>
               ))}
-            {!displayLoading && diseases && diseases.length > 0 ? (
+            {!isLoading && diseases && diseases.length > 0 ? (
               diseases.map((disease) => (
                 <TableRow key={disease.id}>
                   <TableCell className="font-medium whitespace-nowrap">{disease.name}</TableCell>
                   <TableCell>{disease.description}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="inline-flex gap-2">
+                       <FormDialog
+                        title="Edit Penyakit"
+                        description="Ubah detail penyakit di bawah ini."
+                        trigger={
+                          <Button variant="ghost" size="icon">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        }
+                      >
+                        <DiseaseForm initialData={disease} isEditMode />
+                      </FormDialog>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tindakan ini tidak dapat diurungkan. Ini akan menghapus data penyakit ({disease.name}) secara permanen.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(disease.id, disease.name)} className="bg-destructive hover:bg-destructive/90">Hapus</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
-              !displayLoading && (
+              !isLoading && (
                 <TableRow>
-                  <TableCell colSpan={2} className="text-center">
+                  <TableCell colSpan={3} className="text-center">
                     Tidak ada data penyakit.
                   </TableCell>
                 </TableRow>

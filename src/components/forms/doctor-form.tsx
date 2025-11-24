@@ -47,14 +47,20 @@ type DoctorFormValues = z.infer<typeof doctorFormSchema>
 
 const daysOfWeek = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
 
-export default function DoctorForm() {
+interface DoctorFormProps {
+    initialData?: DoctorFormValues;
+    isEditMode?: boolean;
+    closeDialog?: () => void;
+}
+
+export default function DoctorForm({ initialData, isEditMode = false, closeDialog }: DoctorFormProps) {
   const { toast } = useToast()
   const { firestore } = useFirebase()
   const { user, isUserLoading } = useUser();
 
   const form = useForm<DoctorFormValues>({
     resolver: zodResolver(doctorFormSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       id: "",
       name: "",
       address: "",
@@ -82,182 +88,198 @@ export default function DoctorForm() {
     setDocumentNonBlocking(doctorRef, data, { merge: true });
 
     toast({
-      title: "Data Dokter Tersimpan",
-      description: "Data dokter telah berhasil disimpan atau diperbarui.",
+      title: isEditMode ? "Data Dokter Diperbarui" : "Data Dokter Tersimpan",
+      description: `Data untuk dokter ${data.name} telah berhasil disimpan.`,
     })
-    form.reset();
+    
+    if (closeDialog) {
+        closeDialog();
+    } else if (!isEditMode) {
+        form.reset();
+    }
+  }
+
+  const Wrapper = isEditMode ? 'div' : Card;
+  const wrapperProps = isEditMode ? {} : { className: "w-full max-w-4xl mx-auto" };
+
+  const formContent = (
+    <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className={isEditMode ? "space-y-8 p-1" : "space-y-8"}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <FormField
+            control={form.control}
+            name="id"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>ID Dokter</FormLabel>
+                <FormControl>
+                    <Input placeholder="Contoh: DOK-001" {...field} disabled={isEditMode} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Nama Dokter</FormLabel>
+                <FormControl>
+                    <Input placeholder="Dr. John Smith" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="gender"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Jenis Kelamin</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Pilih jenis kelamin" />
+                    </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                    <SelectItem value="Laki-laki">Laki-laki</SelectItem>
+                    <SelectItem value="Perempuan">Perempuan</SelectItem>
+                    </SelectContent>
+                </Select>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="phoneNumber"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Nomor HP</FormLabel>
+                <FormControl>
+                    <Input type="tel" placeholder="081234567890" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="address"
+            render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                <FormLabel>Alamat</FormLabel>
+                <FormControl>
+                    <Input placeholder="Jl. Profesional No. 1, Jakarta" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+
+        <Separator />
+
+        <div className="space-y-4">
+            <FormLabel>Jadwal Dokter</FormLabel>
+            {fields.map((item, index) => (
+            <div key={item.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-4 border rounded-md relative">
+                <FormField
+                    control={form.control}
+                    name={`schedule.${index}.day`}
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Hari</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Pilih hari" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {daysOfWeek.map(day => <SelectItem key={day} value={day}>{day}</SelectItem>)}
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name={`schedule.${index}.startTime`}
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Jam Mulai</FormLabel>
+                        <FormControl>
+                        <Input type="time" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name={`schedule.${index}.endTime`}
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Jam Selesai</FormLabel>
+                        <FormControl>
+                        <Input type="time" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                    <Button type="button" variant="ghost" size="icon" className="text-destructive hover:text-destructive md:justify-self-center" onClick={() => remove(index)}>
+                    <XCircle />
+                    <span className="sr-only">Hapus Jadwal</span>
+                    </Button>
+            </div>
+            ))}
+            <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-2"
+            onClick={() => append({ day: "Senin", startTime: "09:00", endTime: "17:00" })}
+            >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Tambah Jadwal
+            </Button>
+            <FormField
+                control={form.control}
+                name="schedule"
+                render={() => (
+                    <FormItem>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+        </div>
+        
+        <CardFooter className="flex justify-end p-0 pt-6">
+            <Button type="submit" disabled={isUserLoading}>{isEditMode ? "Simpan Perubahan" : "Simpan Data Dokter"}</Button>
+        </CardFooter>
+        </form>
+    </Form>
+  );
+
+  if (isEditMode) {
+    return formContent;
   }
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle>Form Data Dokter</CardTitle>
-        <CardDescription>Masukkan detail informasi mengenai profil dokter.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <FormField
-                control={form.control}
-                name="id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ID Dokter</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Contoh: DOK-001" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nama Dokter</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Dr. John Smith" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="gender"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Jenis Kelamin</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih jenis kelamin" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Laki-laki">Laki-laki</SelectItem>
-                        <SelectItem value="Perempuan">Perempuan</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="phoneNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nomor HP</FormLabel>
-                    <FormControl>
-                      <Input type="tel" placeholder="081234567890" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Alamat</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Jl. Profesional No. 1, Jakarta" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <Separator />
-
-            <div className="space-y-4">
-              <FormLabel>Jadwal Dokter</FormLabel>
-              {fields.map((item, index) => (
-                <div key={item.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-4 border rounded-md relative">
-                    <FormField
-                      control={form.control}
-                      name={`schedule.${index}.day`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Hari</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Pilih hari" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {daysOfWeek.map(day => <SelectItem key={day} value={day}>{day}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name={`schedule.${index}.startTime`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Jam Mulai</FormLabel>
-                          <FormControl>
-                            <Input type="time" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name={`schedule.${index}.endTime`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Jam Selesai</FormLabel>
-                          <FormControl>
-                            <Input type="time" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                     <Button type="button" variant="ghost" size="icon" className="text-destructive hover:text-destructive md:justify-self-center" onClick={() => remove(index)}>
-                        <XCircle />
-                        <span className="sr-only">Hapus Jadwal</span>
-                      </Button>
-                </div>
-              ))}
-               <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={() => append({ day: "Senin", startTime: "09:00", endTime: "17:00" })}
-              >
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Tambah Jadwal
-              </Button>
-               <FormField
-                  control={form.control}
-                  name="schedule"
-                  render={() => (
-                     <FormItem>
-                        <FormMessage />
-                     </FormItem>
-                  )}
-               />
-            </div>
-            
-            <CardFooter className="flex justify-end p-0 pt-6">
-                <Button type="submit" disabled={isUserLoading}>Simpan Data Dokter</Button>
-            </CardFooter>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
-  )
+    <Wrapper {...wrapperProps}>
+        <CardHeader>
+            <CardTitle>Form Data Dokter</CardTitle>
+            <CardDescription>Masukkan detail informasi mengenai profil dokter.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            {formContent}
+        </CardContent>
+    </Wrapper>
+  );
 }

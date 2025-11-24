@@ -72,7 +72,7 @@ export default function LoginForm({ onSwitchView }: LoginFormProps) {
             <PawPrint className="w-12 h-12 text-primary" />
         </div>
         <CardTitle className="text-2xl">Login Admin</CardTitle>
-        <CardDescription>Masuk untuk mengelola VetClinic Connect.</CardDescription>
+        <CardDescription>Masuk untuk mengelola Pawvet Connect.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>

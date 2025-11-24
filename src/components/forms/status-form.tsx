@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { collection } from "firebase/firestore"
+import { collection, doc } from "firebase/firestore"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -18,9 +18,10 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { useFirebase, addDocumentNonBlocking, useUser } from "@/firebase"
+import { useFirebase, setDocumentNonBlocking, useUser } from "@/firebase"
 
 const statusFormSchema = z.object({
+  id: z.string().optional(),
   patientId: z.string().min(1, "ID Pasien harus diisi."),
   actions: z.string().min(1, "Tindakan harus diisi."),
   behavior: z.string().min(1, "Tingkah laku harus diisi."),
@@ -33,14 +34,20 @@ const statusFormSchema = z.object({
 
 type StatusFormValues = z.infer<typeof statusFormSchema>
 
-export default function StatusForm() {
+interface StatusFormProps {
+    initialData?: StatusFormValues;
+    isEditMode?: boolean;
+    closeDialog?: () => void;
+}
+
+export default function StatusForm({ initialData, isEditMode = false, closeDialog }: StatusFormProps) {
   const { toast } = useToast()
   const { firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
 
   const form = useForm<StatusFormValues>({
     resolver: zodResolver(statusFormSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       patientId: "",
       actions: "",
       behavior: "",
@@ -59,139 +66,158 @@ export default function StatusForm() {
       return;
     }
 
-    const statusRef = collection(firestore, `doctors/${user.uid}/patients/${data.patientId}/presentStatuses`);
-    addDocumentNonBlocking(statusRef, data);
+    const statusId = isEditMode && data.id ? data.id : doc(collection(firestore, 'dummy')).id;
+    const statusRef = doc(firestore, `doctors/${user.uid}/patients/${data.patientId}/presentStatuses`, statusId);
+    
+    const dataToSave = { ...data, id: statusId };
+    setDocumentNonBlocking(statusRef, dataToSave, { merge: true });
     
     toast({
-      title: "Data Status Present Tersimpan",
+      title: isEditMode ? "Data Status Diperbarui" : "Data Status Present Tersimpan",
       description: "Data status telah berhasil disimpan ke Firestore.",
     })
-    form.reset();
+    
+    if (closeDialog) {
+        closeDialog();
+    } else if (!isEditMode) {
+        form.reset();
+    }
+  }
+
+  const Wrapper = isEditMode ? 'div' : Card;
+  const wrapperProps = isEditMode ? {} : { className: "w-full max-w-4xl mx-auto" };
+
+  const formContent = (
+     <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className={isEditMode ? "space-y-8 p-1" : "space-y-8"}>
+            <FormField
+            control={form.control}
+            name="patientId"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>ID Pasien</FormLabel>
+                <FormControl>
+                    <Input placeholder="Masukkan ID Pasien" {...field} disabled={isEditMode} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <FormField
+            control={form.control}
+            name="temperature"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Suhu Tubuh (°C)</FormLabel>
+                <FormControl>
+                    <Input type="number" step="0.1" placeholder="38.5" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="heartRate"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Frekuensi Jantung (bpm)</FormLabel>
+                <FormControl>
+                    <Input type="number" placeholder="120" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="respiratoryRate"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Frekuensi Nafas (per menit)</FormLabel>
+                <FormControl>
+                    <Input type="number" placeholder="30" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <FormField
+            control={form.control}
+            name="hydration"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Hidrasi</FormLabel>
+                <FormControl>
+                    <Input placeholder="Baik, cukup, dehidrasi ringan" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="posture"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Sikap Berdiri</FormLabel>
+                <FormControl>
+                    <Input placeholder="Normal, bungkuk, pincang" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="behavior"
+            render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                <FormLabel>Tingkah Laku</FormLabel>
+                <FormControl>
+                    <Textarea placeholder="Aktif, lesu, agresif, cemas, dll." {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="actions"
+            render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                <FormLabel>Tindakan</FormLabel>
+                <FormControl>
+                    <Textarea placeholder="Tindakan awal yang dilakukan: pemeriksaan fisik, pemberian cairan, dll." {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+        <CardFooter className="flex justify-end p-0 pt-6">
+            <Button type="submit" disabled={isUserLoading}>{isEditMode ? "Simpan Perubahan" : "Simpan Data Status"}</Button>
+        </CardFooter>
+        </form>
+    </Form>
+  );
+
+  if (isEditMode) {
+    return formContent;
   }
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
+    <Wrapper {...wrapperProps}>
       <CardHeader>
         <CardTitle>Form Status Present</CardTitle>
         <CardDescription>Catat status dan kondisi terkini pasien saat kunjungan.</CardDescription>
       </CardHeader>
       <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-             <FormField
-                control={form.control}
-                name="patientId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ID Pasien</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Masukkan ID Pasien" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <FormField
-                control={form.control}
-                name="temperature"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Suhu Tubuh (°C)</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.1" placeholder="38.5" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="heartRate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Frekuensi Jantung (bpm)</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="120" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="respiratoryRate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Frekuensi Nafas (per menit)</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="30" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-               <FormField
-                control={form.control}
-                name="hydration"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Hidrasi</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Baik, cukup, dehidrasi ringan" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="posture"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Sikap Berdiri</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Normal, bungkuk, pincang" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="behavior"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Tingkah Laku</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Aktif, lesu, agresif, cemas, dll." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="actions"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Tindakan</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Tindakan awal yang dilakukan: pemeriksaan fisik, pemberian cairan, dll." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <CardFooter className="flex justify-end p-0 pt-6">
-                <Button type="submit" disabled={isUserLoading}>Simpan Data Status</Button>
-            </CardFooter>
-          </form>
-        </Form>
+        {formContent}
       </CardContent>
-    </Card>
+    </Wrapper>
   )
 }

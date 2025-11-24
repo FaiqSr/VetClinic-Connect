@@ -11,7 +11,7 @@ export function DashboardWelcome() {
           <div className="flex justify-center mb-4">
             <PawPrint className="w-16 h-16 text-primary" />
           </div>
-          <CardTitle className="text-3xl font-headline">Selamat Datang di VetClinic Connect</CardTitle>
+          <CardTitle className="text-3xl font-headline">Selamat Datang di Pawvet Connect</CardTitle>
           <CardDescription className="text-lg">
             Sistem Manajemen Rekam Medis Klinik Hewan Anda
           </CardDescription>

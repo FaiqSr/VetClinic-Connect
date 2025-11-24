@@ -58,7 +58,7 @@ export function DashboardNav({ activeView, setActiveView }: DashboardNavProps) {
       <SidebarHeader>
         <div className="flex items-center gap-2 p-2">
             <PawPrint className="w-8 h-8 text-primary" />
-            <span className="text-lg font-semibold font-headline">VetClinic</span>
+            <span className="text-lg font-semibold font-headline">Pawvet</span>
         </div>
       </SidebarHeader>
 

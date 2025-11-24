@@ -40,14 +40,20 @@ const patientFormSchema = z.object({
 
 type PatientFormValues = z.infer<typeof patientFormSchema>
 
-export default function PatientForm() {
+interface PatientFormProps {
+    initialData?: PatientFormValues;
+    isEditMode?: boolean;
+    closeDialog?: () => void;
+}
+
+export default function PatientForm({ initialData, isEditMode = false, closeDialog }: PatientFormProps) {
   const { toast } = useToast()
   const { firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
 
   const form = useForm<PatientFormValues>({
     resolver: zodResolver(patientFormSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       id: "",
       name: "",
       breed: "",
@@ -71,128 +77,144 @@ export default function PatientForm() {
     setDocumentNonBlocking(patientRef, data, { merge: true });
 
     toast({
-      title: "Data Pasien Tersimpan",
-      description: "Data pasien telah berhasil disimpan ke Firestore.",
+      title: isEditMode ? "Data Pasien Diperbarui" : "Data Pasien Tersimpan",
+      description: `Data untuk pasien ${data.name} telah berhasil disimpan.`,
     })
-    form.reset();
+    
+    if (closeDialog) {
+        closeDialog();
+    } else if (!isEditMode) {
+        form.reset();
+    }
+  }
+
+  const Wrapper = isEditMode ? 'div' : Card;
+  const wrapperProps = isEditMode ? {} : { className: "w-full max-w-4xl mx-auto" };
+
+  const formContent = (
+    <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className={isEditMode ? "space-y-8 p-1" : "space-y-8"}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <FormField
+            control={form.control}
+            name="id"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>ID Pasien (Kode Pasien)</FormLabel>
+                <FormControl>
+                    <Input placeholder="Contoh: PASIEN-001" {...field} disabled={isEditMode} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Nama Pasien</FormLabel>
+                <FormControl>
+                    <Input placeholder="Contoh: Mochi" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="species"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Jenis Hewan</FormLabel>
+                <FormControl>
+                    <Input placeholder="Contoh: Anjing, Kucing" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="breed"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Ras</FormLabel>
+                <FormControl>
+                    <Input placeholder="Contoh: Golden Retriever, Persia" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="age"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Umur (Tahun)</FormLabel>
+                <FormControl>
+                    <Input type="number" placeholder="3" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="weight"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Berat Badan (kg)</FormLabel>
+                <FormControl>
+                    <Input type="number" step="0.1" placeholder="5.5" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="gender"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Jenis Kelamin</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Pilih jenis kelamin" />
+                    </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                    <SelectItem value="Jantan">Jantan</SelectItem>
+                    <SelectItem value="Betina">Betina</SelectItem>
+                    </SelectContent>
+                </Select>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+        <CardFooter className="flex justify-end p-0 pt-6">
+            <Button type="submit" disabled={isUserLoading}>{isEditMode ? "Simpan Perubahan" : "Simpan Data Pasien"}</Button>
+        </CardFooter>
+        </form>
+    </Form>
+  );
+
+  if (isEditMode) {
+    return formContent;
   }
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle>Form Identitas Pasien</CardTitle>
-        <CardDescription>Masukkan detail informasi mengenai hewan pasien.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <FormField
-                control={form.control}
-                name="id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ID Pasien (Kode Pasien)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Contoh: PASIEN-001" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nama Pasien</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Contoh: Mochi" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="species"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Jenis Hewan</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Contoh: Anjing, Kucing" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="breed"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ras</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Contoh: Golden Retriever, Persia" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="age"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Umur (Tahun)</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="3" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="weight"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Berat Badan (kg)</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.1" placeholder="5.5" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="gender"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Jenis Kelamin</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih jenis kelamin" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Jantan">Jantan</SelectItem>
-                        <SelectItem value="Betina">Betina</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <CardFooter className="flex justify-end p-0 pt-6">
-                <Button type="submit" disabled={isUserLoading}>Simpan Data Pasien</Button>
-            </CardFooter>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+    <Wrapper {...wrapperProps}>
+        <CardHeader>
+            <CardTitle>Form Identitas Pasien</CardTitle>
+            <CardDescription>Masukkan detail informasi mengenai hewan pasien.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            {formContent}
+        </CardContent>
+    </Wrapper>
   )
 }
