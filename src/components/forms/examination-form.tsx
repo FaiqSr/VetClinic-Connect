@@ -6,7 +6,7 @@ import { z } from "zod"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 import { useEffect } from "react"
-import { collection, collectionGroup, doc } from "firebase/firestore"
+import { collection, collectionGroup, doc, query, where } from "firebase/firestore"
 import Select from "react-select"
 
 import { cn } from "@/lib/utils"
@@ -41,6 +41,8 @@ import { useFirebase, setDocumentNonBlocking, useUser, useCollection, useMemoFir
 interface Doctor { id: string; name: string; }
 interface Patient { id: string; name: string; }
 interface Disease { id: string; name: string; }
+interface PresentStatus { id: string; behavior: string; date: string; }
+
 
 const examinationFormSchema = z.object({
   id: z.string().optional(),
@@ -49,9 +51,10 @@ const examinationFormSchema = z.object({
   }),
   doctorId: z.string().min(1, "Dokter harus dipilih."),
   patientId: z.string().min(1, "Pasien harus dipilih."),
+  presentStatusId: z.string().min(1, "Status Present harus dipilih."),
   diseaseIds: z.array(z.string()).min(1, "Minimal satu penyakit harus dipilih."),
-  complaints: z.string().min(1, "Keluhan harus diisi."),
   diagnosis: z.string().min(1, "Diagnosis harus diisi."),
+  treatment: z.string().min(1, "Tindakan harus diisi."),
 })
 
 type ExaminationFormValues = z.infer<typeof examinationFormSchema>
@@ -67,31 +70,48 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
   const { firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
 
-  // Fetch data for selects
-  const doctorsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'doctors') : null, [firestore]);
-  const patientsQuery = useMemoFirebase(() => firestore ? collectionGroup(firestore, 'patients') : null, [firestore]);
-  const diseasesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'diseases') : null, [firestore]);
-
-  const { data: doctors, isLoading: loadingDoctors } = useCollection<Doctor>(doctorsQuery);
-  const { data: patients, isLoading: loadingPatients } = useCollection<Patient>(patientsQuery);
-  const { data: diseases, isLoading: loadingDiseases } = useCollection<Disease>(diseasesQuery);
-
  const form = useForm<ExaminationFormValues>({
     resolver: zodResolver(examinationFormSchema),
     defaultValues: initialData || {
       doctorId: "",
       patientId: "",
+      presentStatusId: "",
       diseaseIds: [],
-      complaints: "",
       diagnosis: "",
+      treatment: "",
     },
   })
+
+ const selectedPatientId = form.watch("patientId");
+
+  // Fetch data for selects
+  const doctorsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'doctors') : null, [firestore]);
+  const patientsQuery = useMemoFirebase(() => firestore ? collectionGroup(firestore, 'patients') : null, [firestore]);
+  const diseasesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'diseases') : null, [firestore]);
+  const presentStatusesQuery = useMemoFirebase(() => {
+    if (!firestore || !user || !selectedPatientId) return null;
+    return query(collection(firestore, `doctors/${user.uid}/patients/${selectedPatientId}/presentStatuses`));
+  }, [firestore, user, selectedPatientId]);
+
+
+  const { data: doctors, isLoading: loadingDoctors } = useCollection<Doctor>(doctorsQuery);
+  const { data: patients, isLoading: loadingPatients } = useCollection<Patient>(patientsQuery);
+  const { data: diseases, isLoading: loadingDiseases } = useCollection<Disease>(diseasesQuery);
+  const { data: presentStatuses, isLoading: loadingStatuses } = useCollection<PresentStatus>(presentStatusesQuery);
+
 
  useEffect(() => {
     if (user && !form.getValues('doctorId') && !initialData) {
         form.setValue('doctorId', user.uid);
     }
   }, [user, form, initialData]);
+
+  // Reset status when patient changes
+  useEffect(() => {
+    if (!isEditMode) {
+      form.setValue('presentStatusId', '');
+    }
+  }, [selectedPatientId, isEditMode, form]);
 
 
   function onSubmit(data: ExaminationFormValues) {
@@ -129,9 +149,10 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
        form.reset({
         doctorId: user.uid,
         patientId: "",
+        presentStatusId: "",
         diseaseIds: [],
-        complaints: "",
         diagnosis: "",
+        treatment: "",
         date: new Date(),
       });
     }
@@ -229,6 +250,26 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
                 </FormItem>
             )}
             />
+             <FormField
+                control={form.control}
+                name="presentStatusId"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Status Present</FormLabel>
+                    <ShadSelect onValueChange={field.onChange} value={field.value} disabled={!selectedPatientId || loadingStatuses}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder={!selectedPatientId ? "Pilih pasien dulu" : "Pilih status present"} />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        {presentStatuses?.map(status => <SelectItem key={status.id} value={status.id}>{status.id}</SelectItem>)}
+                        </SelectContent>
+                    </ShadSelect>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
             
             <div className="md:col-span-2">
             <FormField
@@ -262,13 +303,13 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
 
             <FormField
             control={form.control}
-            name="complaints"
+            name="diagnosis"
             render={({ field }) => (
                 <FormItem className="md:col-span-2">
-                <FormLabel>Keluhan</FormLabel>
+                <FormLabel>Diagnosis</FormLabel>
                 <FormControl>
                     <Textarea
-                    placeholder="Jelaskan keluhan yang disampaikan oleh pemilik hewan."
+                    placeholder="Jelaskan diagnosis dari hasil pemeriksaan."
                     className="resize-y"
                     {...field}
                     />
@@ -279,13 +320,13 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
             />
             <FormField
             control={form.control}
-            name="diagnosis"
+            name="treatment"
             render={({ field }) => (
                 <FormItem className="md:col-span-2">
-                <FormLabel>Diagnosis</FormLabel>
+                <FormLabel>Tindakan</FormLabel>
                 <FormControl>
                     <Textarea
-                    placeholder="Jelaskan diagnosis dari hasil pemeriksaan."
+                    placeholder="Jelaskan tindakan yang diberikan."
                     className="resize-y"
                     {...field}
                     />
