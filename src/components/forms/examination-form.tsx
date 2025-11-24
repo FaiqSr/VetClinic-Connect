@@ -294,7 +294,7 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
             />
             
             <div className="md:col-span-2">
-            <FormField
+            <Controller
                 control={form.control}
                 name="diseaseIds"
                 render={({ field }) => (
