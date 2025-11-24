@@ -2,7 +2,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { doc, collection, where, query } from 'firebase/firestore';
+import { doc, collection, where, query, documentId } from 'firebase/firestore';
 import { useFirebase, useMemoFirebase, useDoc, useCollection } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -48,7 +48,7 @@ export default function ExaminationDetails({ examination }: ExaminationDetailsPr
   const statusRef = useMemoFirebase(() => firestore ? doc(firestore, `doctors/${examination.doctorId}/patients/${examination.patientId}/presentStatuses`, examination.presentStatusId) : null, [firestore, examination.doctorId, examination.patientId, examination.presentStatusId]);
   const diseasesQuery = useMemoFirebase(() => {
     if (!firestore || !examination.diseaseIds || examination.diseaseIds.length === 0) return null;
-    return query(collection(firestore, 'diseases'), where('diseaseId', 'in', examination.diseaseIds));
+    return query(collection(firestore, 'diseases'), where(documentId(), 'in', examination.diseaseIds));
   }, [firestore, examination.diseaseIds]);
 
   // Fetch the data
@@ -109,7 +109,7 @@ export default function ExaminationDetails({ examination }: ExaminationDetailsPr
         <DetailItem label="Teridentifikasi Penyakit" value={
             <div className="flex flex-wrap gap-2 mt-1">
                 {diseases && diseases.length > 0
-                    ? diseases.map(d => <Badge key={d.diseaseId} variant="secondary">{d.name}</Badge>)
+                    ? diseases.map(d => <Badge key={d.id} variant="secondary">{d.name}</Badge>)
                     : '-'
                 }
             </div>
