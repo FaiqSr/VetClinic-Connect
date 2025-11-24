@@ -264,6 +264,10 @@
           "type": "string",
           "description": "Reference to Patient. (Relationship: Patient 1:N Examination)"
         },
+        "presentStatusId": {
+          "type": "string",
+          "description": "Reference to PresentStatus. (Relationship: PresentStatus 1:N Examination)"
+        },
         "diseaseIds": {
           "type": "array",
           "description": "Reference to one or more Diseases. (Relationship: Disease N:M Examination)",
@@ -271,13 +275,13 @@
             "type": "string"
           }
         },
-        "complaints": {
-          "type": "string",
-          "description": "Patient's complaints during the examination."
-        },
         "diagnosis": {
           "type": "string",
-          "description": "Diagnosis made by the doctor."
+          "description": "Diagnosis made by the doctor based on examination."
+        },
+        "treatment": {
+          "type": "string",
+          "description": "Actions or treatment given to the patient."
         }
       },
       "required": [
@@ -285,9 +289,10 @@
         "date",
         "doctorId",
         "patientId",
+        "presentStatusId",
         "diseaseIds",
-        "complaints",
-        "diagnosis"
+        "diagnosis",
+        "treatment"
       ]
     },
     "Disease": {

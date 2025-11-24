@@ -1,9 +1,10 @@
+
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { doc } from "firebase/firestore"
+import { collection, doc } from "firebase/firestore"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -24,7 +25,7 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { useFirebase, setDocumentNonBlocking, useUser } from "@/firebase"
+import { useFirebase, setDocumentNonBlocking, useUser, useCollection, useMemoFirebase } from "@/firebase"
 
 const patientFormSchema = z.object({
   id: z.string().min(1, "ID Pasien harus diisi."),
@@ -40,6 +41,9 @@ const patientFormSchema = z.object({
 
 type PatientFormValues = z.infer<typeof patientFormSchema>
 
+interface Patient {
+    id: string;
+}
 interface PatientFormProps {
     initialData?: PatientFormValues;
     isEditMode?: boolean;
@@ -63,6 +67,13 @@ export default function PatientForm({ initialData, isEditMode = false, closeDial
     },
   })
 
+  const patientsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, `doctors/${user.uid}/patients`);
+  }, [firestore, user]);
+
+  const { data: patients, isLoading: isLoadingPatients } = useCollection<Patient>(patientsQuery);
+
   function onSubmit(data: PatientFormValues) {
     if (!firestore || !user) {
       toast({
@@ -71,6 +82,14 @@ export default function PatientForm({ initialData, isEditMode = false, closeDial
         description: "Anda harus login untuk menyimpan data.",
       });
       return;
+    }
+
+    if (!isEditMode && patients?.some(p => p.id === data.id)) {
+        form.setError("id", {
+            type: "manual",
+            message: "ID Pasien sudah digunakan.",
+        });
+        return;
     }
     
     const patientRef = doc(firestore, `doctors/${user.uid}/patients`, data.id);
@@ -88,6 +107,7 @@ export default function PatientForm({ initialData, isEditMode = false, closeDial
     }
   }
 
+  const isLoading = isUserLoading || isLoadingPatients;
   const Wrapper = isEditMode ? 'div' : Card;
   const wrapperProps = isEditMode ? {} : { className: "w-full max-w-4xl mx-auto" };
 
@@ -196,7 +216,7 @@ export default function PatientForm({ initialData, isEditMode = false, closeDial
             />
         </div>
         <CardFooter className="flex justify-end p-0 pt-6">
-            <Button type="submit" disabled={isUserLoading}>{isEditMode ? "Simpan Perubahan" : "Simpan Data Pasien"}</Button>
+            <Button type="submit" disabled={isLoading}>{isEditMode ? "Simpan Perubahan" : "Simpan Data Pasien"}</Button>
         </CardFooter>
         </form>
     </Form>

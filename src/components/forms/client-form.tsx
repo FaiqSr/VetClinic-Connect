@@ -1,3 +1,5 @@
+
+
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -5,7 +7,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
-import { doc } from "firebase/firestore"
+import { collection, collectionGroup, doc } from "firebase/firestore"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -24,9 +26,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { useFirebase, setDocumentNonBlocking, useUser } from "@/firebase"
+import { useFirebase, setDocumentNonBlocking, useUser, useCollection, useMemoFirebase } from "@/firebase"
+import { useEffect } from "react"
 
 const clientFormSchema = z.object({
   id: z.string().min(1, "ID Klien harus diisi."),
@@ -41,6 +51,15 @@ const clientFormSchema = z.object({
 })
 
 type ClientFormValues = z.infer<typeof clientFormSchema>
+
+interface Patient {
+  id: string;
+  name: string;
+}
+
+interface Client {
+    id: string;
+}
 
 interface ClientFormProps {
   initialData?: ClientFormValues;
@@ -64,6 +83,24 @@ export default function ClientForm({ initialData, isEditMode = false, closeDialo
       responsiblePerson: "",
     },
   })
+  
+  const patientsQuery = useMemoFirebase(() => firestore ? collectionGroup(firestore, 'patients') : null, [firestore]);
+  const { data: patients, isLoading: isLoadingPatients } = useCollection<Patient>(patientsQuery);
+  
+  const selectedPatientId = form.watch("patientId");
+
+  const clientsQuery = useMemoFirebase(() => {
+    if (!firestore || !user || !selectedPatientId) return null;
+    return collection(firestore, `doctors/${user.uid}/patients/${selectedPatientId}/clients`);
+  }, [firestore, user, selectedPatientId]);
+  const { data: clients, isLoading: isLoadingClients } = useCollection<Client>(clientsQuery);
+  
+  useEffect(() => {
+      if (selectedPatientId && !isEditMode) {
+          form.setValue("id", "");
+          form.clearErrors("id");
+      }
+  }, [selectedPatientId, form, isEditMode]);
 
   function onSubmit(data: ClientFormValues) {
      if (!firestore || !user) {
@@ -73,6 +110,14 @@ export default function ClientForm({ initialData, isEditMode = false, closeDialo
         description: "Anda harus login untuk menyimpan data.",
       });
       return;
+    }
+
+    if (!isEditMode && clients?.some(c => c.id === data.id)) {
+        form.setError("id", {
+            type: "manual",
+            message: "ID Klien sudah digunakan untuk pasien ini.",
+        });
+        return;
     }
 
     const clientRef = doc(firestore, `doctors/${user.uid}/patients/${data.patientId}/clients`, data.id);
@@ -97,22 +142,31 @@ export default function ClientForm({ initialData, isEditMode = false, closeDialo
 
   const Wrapper = isEditMode ? 'div' : Card;
   const wrapperProps = isEditMode ? {} : { className: "w-full max-w-4xl mx-auto" };
+  const isLoading = isUserLoading || isLoadingPatients || isLoadingClients;
+
   const formContent = (
     <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className={isEditMode ? "space-y-8 p-1" : "space-y-8"}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <FormField
-            control={form.control}
-            name="patientId"
-            render={({ field }) => (
+              control={form.control}
+              name="patientId"
+              render={({ field }) => (
                 <FormItem>
-                <FormLabel>ID Pasien</FormLabel>
-                <FormControl>
-                    <Input placeholder="Contoh: PASIEN-001" {...field} disabled={isEditMode} />
-                </FormControl>
-                <FormMessage />
+                  <FormLabel>Pasien</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isUserLoading || isLoadingPatients || isEditMode}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih Pasien" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {patients?.map(p => <SelectItem key={p.id} value={p.id}>{p.name} ({p.id})</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
                 </FormItem>
-            )}
+              )}
             />
             <FormField
             control={form.control}
@@ -121,7 +175,7 @@ export default function ClientForm({ initialData, isEditMode = false, closeDialo
                 <FormItem>
                 <FormLabel>ID Klien</FormLabel>
                 <FormControl>
-                    <Input placeholder="Contoh: KLIEN-001" {...field} disabled={isEditMode} />
+                    <Input placeholder="Contoh: KLIEN-001" {...field} disabled={isEditMode || !selectedPatientId} />
                 </FormControl>
                 <FormMessage />
                 </FormItem>
@@ -222,7 +276,7 @@ export default function ClientForm({ initialData, isEditMode = false, closeDialo
             />
         </div>
         <CardFooter className="flex justify-end p-0 pt-6">
-            <Button type="submit" disabled={isUserLoading}>{isEditMode ? "Simpan Perubahan" : "Simpan Data Klien"}</Button>
+            <Button type="submit" disabled={isLoading}>{isEditMode ? "Simpan Perubahan" : "Simpan Data Klien"}</Button>
         </CardFooter>
         </form>
     </Form>
@@ -244,3 +298,5 @@ export default function ClientForm({ initialData, isEditMode = false, closeDialo
     </Card>
   )
 }
+
+    

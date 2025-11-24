@@ -1,9 +1,10 @@
+
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, useFieldArray } from "react-hook-form"
 import { z } from "zod"
-import { doc } from "firebase/firestore"
+import { doc, collection } from "firebase/firestore"
 import { PlusCircle, XCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -25,7 +26,7 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { useFirebase, setDocumentNonBlocking, useUser } from "@/firebase"
+import { useFirebase, setDocumentNonBlocking, useUser, useCollection, useMemoFirebase } from "@/firebase"
 import { Separator } from "../ui/separator"
 
 const scheduleSchema = z.object({
@@ -53,6 +54,10 @@ interface DoctorFormProps {
     closeDialog?: () => void;
 }
 
+interface Doctor {
+    id: string;
+}
+
 export default function DoctorForm({ initialData, isEditMode = false, closeDialog }: DoctorFormProps) {
   const { toast } = useToast()
   const { firestore } = useFirebase()
@@ -74,12 +79,23 @@ export default function DoctorForm({ initialData, isEditMode = false, closeDialo
     name: "schedule",
   });
 
+  const doctorsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'doctors') : null, [firestore]);
+  const { data: doctors, isLoading: isLoadingDoctors } = useCollection<Doctor>(doctorsQuery);
+
   function onSubmit(data: DoctorFormValues) {
     if (!firestore || !user) {
         toast({
             variant: "destructive",
             title: "Error",
             description: "Anda harus login untuk menyimpan data.",
+        });
+        return;
+    }
+
+    if (!isEditMode && doctors?.some(d => d.id === data.id)) {
+        form.setError("id", {
+            type: "manual",
+            message: "ID Dokter sudah digunakan.",
         });
         return;
     }
@@ -101,6 +117,7 @@ export default function DoctorForm({ initialData, isEditMode = false, closeDialo
 
   const Wrapper = isEditMode ? 'div' : Card;
   const wrapperProps = isEditMode ? {} : { className: "w-full max-w-4xl mx-auto" };
+  const isLoading = isUserLoading || isLoadingDoctors;
 
   const formContent = (
     <Form {...form}>
@@ -261,7 +278,7 @@ export default function DoctorForm({ initialData, isEditMode = false, closeDialo
         </div>
         
         <CardFooter className="flex justify-end p-0 pt-6">
-            <Button type="submit" disabled={isUserLoading}>{isEditMode ? "Simpan Perubahan" : "Simpan Data Dokter"}</Button>
+            <Button type="submit" disabled={isLoading}>{isEditMode ? "Simpan Perubahan" : "Simpan Data Dokter"}</Button>
         </CardFooter>
         </form>
     </Form>
@@ -283,3 +300,5 @@ export default function DoctorForm({ initialData, isEditMode = false, closeDialo
     </Wrapper>
   );
 }
+
+    

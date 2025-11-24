@@ -27,9 +27,10 @@ interface Examination {
   date: string;
   doctorId: string;
   patientId: string;
+  presentStatusId: string;
   diseaseIds: string[];
-  complaints: string;
   diagnosis: string;
+  treatment: string;
   __path: string;
 }
 
@@ -39,9 +40,9 @@ export function ExaminationList() {
   const { toast } = useToast();
 
   const examinationsQuery = useMemoFirebase(() => {
-    if (!firestore || isUserLoading) return null;
+    if (!firestore || !user) return null;
     return collectionGroup(firestore, 'examinations');
-  }, [firestore, isUserLoading]);
+  }, [firestore, user]);
 
   const { data: examinations, isLoading: isExaminationsLoading } = useCollection<Examination>(examinationsQuery, { includePath: true });
 
@@ -71,8 +72,8 @@ export function ExaminationList() {
               <TableHead>ID Pasien</TableHead>
               <TableHead>ID Dokter</TableHead>
               <TableHead>Penyakit</TableHead>
-              <TableHead>Keluhan</TableHead>
               <TableHead>Diagnosis</TableHead>
+              <TableHead>Tindakan</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
@@ -100,8 +101,8 @@ export function ExaminationList() {
                       {exam.diseaseIds?.map(id => <Badge key={id} variant="secondary">{id}</Badge>)}
                     </div>
                   </TableCell>
-                  <TableCell>{exam.complaints}</TableCell>
                   <TableCell>{exam.diagnosis}</TableCell>
+                  <TableCell>{exam.treatment}</TableCell>
                   <TableCell className="text-right">
                      <div className="inline-flex gap-2">
                        <FormDialog
