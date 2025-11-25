@@ -101,9 +101,13 @@
           "type": "string",
           "description": "Reference to Patient. (Relationship: Patient 1:N PresentStatus)"
         },
-        "actions": {
+        "anamnesis": {
           "type": "string",
-          "description": "Observed actions of the patient."
+          "description": "Patient's complaints as reported by the owner (anamnesis)."
+        },
+        "temuan": {
+          "type": "string",
+          "description": "Abnormal findings during the physical examination."
         },
         "behavior": {
           "type": "string",
@@ -133,7 +137,8 @@
       "required": [
         "id",
         "patientId",
-        "actions",
+        "anamnesis",
+        "temuan",
         "behavior",
         "hydration",
         "posture",

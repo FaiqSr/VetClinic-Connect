@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -23,7 +24,8 @@ import StatusForm from '../forms/status-form';
 interface PresentStatus {
   id: string;
   patientId: string;
-  actions: string;
+  anamnesis: string;
+  temuan: string;
   behavior: string;
   hydration: string;
   posture: string;
@@ -68,9 +70,9 @@ export function StatusList() {
           <TableHeader>
             <TableRow>
               <TableHead>ID Pasien</TableHead>
+              <TableHead>Anamnesis</TableHead>
+              <TableHead>Temuan</TableHead>
               <TableHead>Suhu (°C)</TableHead>
-              <TableHead>Jantung (bpm)</TableHead>
-              <TableHead>Nafas (/menit)</TableHead>
               <TableHead>Hidrasi</TableHead>
               <TableHead>Tingkah Laku</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
@@ -81,8 +83,8 @@ export function StatusList() {
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
                   <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
@@ -93,9 +95,9 @@ export function StatusList() {
               statuses.map((status) => (
                 <TableRow key={status.__path}>
                   <TableCell className="whitespace-nowrap">{status.patientId}</TableCell>
+                  <TableCell>{status.anamnesis}</TableCell>
+                  <TableCell>{status.temuan}</TableCell>
                   <TableCell>{status.temperature}</TableCell>
-                  <TableCell>{status.heartRate}</TableCell>
-                  <TableCell>{status.respiratoryRate}</TableCell>
                   <TableCell>{status.hydration}</TableCell>
                   <TableCell>{status.behavior}</TableCell>
                   <TableCell className="text-right">
