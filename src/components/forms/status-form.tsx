@@ -32,7 +32,8 @@ import { useFirebase, setDocumentNonBlocking, useUser, useCollection, useMemoFir
 const statusFormSchema = z.object({
   id: z.string().optional(), // ID is optional, will be auto-generated
   patientId: z.string().min(1, "ID Pasien harus diisi."),
-  actions: z.string().min(1, "Tindakan harus diisi."),
+  anamnesis: z.string().min(1, "Anamnesis harus diisi."),
+  temuan: z.string().min(1, "Temuan harus diisi."),
   behavior: z.string().min(1, "Tingkah laku harus diisi."),
   hydration: z.string().min(1, "Status hidrasi harus diisi."),
   posture: z.string().min(1, "Sikap berdiri harus diisi."),
@@ -63,7 +64,8 @@ export default function StatusForm({ initialData, isEditMode = false, closeDialo
     resolver: zodResolver(statusFormSchema),
     defaultValues: initialData || {
       patientId: "",
-      actions: "",
+      anamnesis: "",
+      temuan: "",
       behavior: "",
       hydration: "",
       posture: "",
@@ -105,7 +107,8 @@ export default function StatusForm({ initialData, isEditMode = false, closeDialo
     } else if (!isEditMode) {
         form.reset({
           patientId: "",
-          actions: "",
+          anamnesis: "",
+          temuan: "",
           behavior: "",
           hydration: "",
           posture: "",
@@ -225,17 +228,30 @@ export default function StatusForm({ initialData, isEditMode = false, closeDialo
             )}
             />
             <FormField
-            control={form.control}
-            name="actions"
-            render={({ field }) => (
-                <FormItem className="md:col-span-2">
-                <FormLabel>Tindakan</FormLabel>
-                <FormControl>
-                    <Textarea placeholder="Tindakan awal yang dilakukan: pemeriksaan fisik, pemberian cairan, dll." {...field} />
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-            )}
+              control={form.control}
+              name="anamnesis"
+              render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                  <FormLabel>Anamnesis (Keluhan)</FormLabel>
+                  <FormControl>
+                      <Textarea placeholder="Jelaskan keluhan yang disampaikan oleh pemilik pasien." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                  </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="temuan"
+              render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                  <FormLabel>Temuan (Pemeriksaan Fisik)</FormLabel>
+                  <FormControl>
+                      <Textarea placeholder="Catat temuan-temuan yang tidak normal saat pemeriksaan fisik." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                  </FormItem>
+              )}
             />
         </div>
         <CardFooter className="flex justify-end p-0 pt-6">
