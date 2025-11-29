@@ -41,7 +41,7 @@ import { useFirebase, setDocumentNonBlocking, useUser, useCollection, useMemoFir
 // Schemas for fetching data
 interface Doctor { id: string; name: string; }
 interface Patient { id: string; name: string; }
-interface Disease { diseaseId: string; name: string; }
+interface Disease { diseaseId: string; name: string; id: string;}
 interface PresentStatus { id: string; behavior: string; date: string; }
 
 
@@ -293,7 +293,7 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
                 )}
             />
             
-            <FormField
+            <Controller
               control={form.control}
               name="diseaseIds"
               render={({ field }) => (
@@ -305,7 +305,7 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
                           isMulti
                           options={diseaseOptions}
                           isLoading={loadingDiseases}
-                          value={diseaseOptions.filter(opt => field.value?.includes(opt.value))}
+                          value={field.value ? diseaseOptions.filter(opt => field.value.includes(opt.value)) : []}
                           onChange={opts => field.onChange(opts?.map(opt => opt.value) || [])}
                           className="text-sm"
                           classNamePrefix="select"
@@ -374,3 +374,5 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
     </Wrapper>
   )
 }
+
+    
