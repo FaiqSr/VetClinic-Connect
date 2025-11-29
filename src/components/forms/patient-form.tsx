@@ -68,9 +68,9 @@ export default function PatientForm({ initialData, isEditMode = false, closeDial
   })
 
   const patientsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return collection(firestore, `doctors/${user.uid}/patients`);
-  }, [firestore, user]);
+    if (!firestore) return null;
+    return collection(firestore, `patients`);
+  }, [firestore]);
 
   const { data: patients, isLoading: isLoadingPatients } = useCollection<Patient>(patientsQuery);
 
@@ -92,7 +92,7 @@ export default function PatientForm({ initialData, isEditMode = false, closeDial
         return;
     }
     
-    const patientRef = doc(firestore, `doctors/${user.uid}/patients`, data.id);
+    const patientRef = doc(firestore, `patients`, data.id);
     setDocumentNonBlocking(patientRef, data, { merge: true });
 
     toast({
@@ -238,3 +238,5 @@ export default function PatientForm({ initialData, isEditMode = false, closeDial
     </Wrapper>
   )
 }
+
+    

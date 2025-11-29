@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
-import { collection, collectionGroup, doc } from "firebase/firestore"
+import { collection, doc } from "firebase/firestore"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -84,15 +84,15 @@ export default function ClientForm({ initialData, isEditMode = false, closeDialo
     },
   })
   
-  const patientsQuery = useMemoFirebase(() => firestore ? collectionGroup(firestore, 'patients') : null, [firestore]);
+  const patientsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'patients') : null, [firestore]);
   const { data: patients, isLoading: isLoadingPatients } = useCollection<Patient>(patientsQuery);
   
   const selectedPatientId = form.watch("patientId");
 
   const clientsQuery = useMemoFirebase(() => {
-    if (!firestore || !user || !selectedPatientId) return null;
-    return collection(firestore, `doctors/${user.uid}/patients/${selectedPatientId}/clients`);
-  }, [firestore, user, selectedPatientId]);
+    if (!firestore || !selectedPatientId) return null;
+    return collection(firestore, `patients/${selectedPatientId}/clients`);
+  }, [firestore, selectedPatientId]);
   const { data: clients, isLoading: isLoadingClients } = useCollection<Client>(clientsQuery);
   
   useEffect(() => {
@@ -120,7 +120,7 @@ export default function ClientForm({ initialData, isEditMode = false, closeDialo
         return;
     }
 
-    const clientRef = doc(firestore, `doctors/${user.uid}/patients/${data.patientId}/clients`, data.id);
+    const clientRef = doc(firestore, `patients/${data.patientId}/clients`, data.id);
     const { patientId, ...clientData } = data;
     const dataToSave = {
         ...clientData,
@@ -298,5 +298,7 @@ export default function ClientForm({ initialData, isEditMode = false, closeDialo
     </Card>
   )
 }
+
+    
 
     

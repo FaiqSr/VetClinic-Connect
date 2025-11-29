@@ -7,7 +7,7 @@ import { z } from "zod"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 import { useEffect } from "react"
-import { collection, collectionGroup, doc, query, where } from "firebase/firestore"
+import { collection, doc } from "firebase/firestore"
 import Select from "react-select"
 
 import { cn } from "@/lib/utils"
@@ -91,19 +91,18 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
 
   // Fetch data for selects
   const doctorsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'doctors') : null, [firestore]);
-  const patientsQuery = useMemoFirebase(() => firestore ? collectionGroup(firestore, 'patients') : null, [firestore]);
+  const patientsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'patients') : null, [firestore]);
   const diseasesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'diseases') : null, [firestore]);
   
   const presentStatusesQuery = useMemoFirebase(() => {
-    if (!firestore || !user || !selectedPatientId) return null;
-    // This query is now correct, fetching from the specific patient's subcollection
-    return collection(firestore, `doctors/${user.uid}/patients/${selectedPatientId}/presentStatuses`);
-  }, [firestore, user, selectedPatientId]);
+    if (!firestore || !selectedPatientId) return null;
+    return collection(firestore, `patients/${selectedPatientId}/presentStatuses`);
+  }, [firestore, selectedPatientId]);
   
   const examinationsQuery = useMemoFirebase(() => {
-      if (!firestore || !user || !selectedPatientId) return null;
-      return collection(firestore, `doctors/${user.uid}/patients/${selectedPatientId}/examinations`);
-  }, [firestore, user, selectedPatientId]);
+      if (!firestore || !selectedPatientId) return null;
+      return collection(firestore, `patients/${selectedPatientId}/examinations`);
+  }, [firestore, selectedPatientId]);
 
   const { data: doctors, isLoading: loadingDoctors } = useCollection<Doctor>(doctorsQuery);
   const { data: patients, isLoading: loadingPatients } = useCollection<Patient>(patientsQuery);
@@ -136,8 +135,6 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
       return;
     }
     
-    // The doctorId for the path is the logged-in user
-    const loggedInDoctorId = user.uid;
     // Use existing ID for edit, or generate a new one for create
     const examId = isEditMode && data.id ? data.id : doc(collection(firestore, 'dummy')).id;
 
@@ -151,7 +148,7 @@ export default function ExaminationForm({ initialData, isEditMode = false, close
         return;
     }
 
-    const examinationDocRef = doc(firestore, `doctors/${loggedInDoctorId}/patients/${data.patientId}/examinations`, examId);
+    const examinationDocRef = doc(firestore, `patients/${data.patientId}/examinations`, examId);
     
     const dataToSave = {
         ...data,

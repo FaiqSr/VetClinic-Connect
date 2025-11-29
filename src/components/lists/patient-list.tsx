@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useFirebase, useMemoFirebase, useUser, deleteDocumentNonBlocking } from '@/firebase';
-import { collectionGroup, doc } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 import {
   Table,
   TableBody,
@@ -46,7 +47,7 @@ export function PatientList({ onSelectPatient }: PatientListProps) {
 
   const patientsQuery = useMemoFirebase(() => {
     if (!firestore || isUserLoading) return null;
-    return collectionGroup(firestore, 'patients');
+    return collection(firestore, 'patients');
   }, [firestore, isUserLoading]);
 
   const { data: patients, isLoading: isPatientsLoading } = useCollection<Patient>(patientsQuery, { includePath: true });
@@ -179,3 +180,5 @@ export function PatientList({ onSelectPatient }: PatientListProps) {
     </Card>
   );
 }
+
+    

@@ -54,23 +54,18 @@ interface PatientReportProps {
 
 export function PatientReport({ patient, onBack }: PatientReportProps) {
   const { firestore } = useFirebase();
-
-  const pathParts = patient.__path.split('/');
-  const doctorId = pathParts[1];
   const patientId = patient.id;
 
   const clientsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'doctors', doctorId, 'patients', patientId, 'clients'), orderBy('visitDate', 'desc'));
-  }, [firestore, doctorId, patientId]);
+    return query(collection(firestore, 'patients', patientId, 'clients'), orderBy('visitDate', 'desc'));
+  }, [firestore, patientId]);
 
   const examinationsQuery = useMemoFirebase(() => {
     if (!firestore || !patientId) return null;
-    // Corrected path for examinations, assuming it's a subcollection of a patient document
-    // The patient document itself is inside a doctor's patient subcollection.
-    const patientDocPath = `doctors/${doctorId}/patients/${patientId}`;
+    const patientDocPath = `patients/${patientId}`;
     return query(collection(firestore, patientDocPath, 'examinations'), orderBy('date', 'desc'));
-  }, [firestore, doctorId, patientId]);
+  }, [firestore, patientId]);
 
   const { data: clients, isLoading: loadingClients } = useCollection<Client>(clientsQuery, { includePath: true });
   const { data: examinations, isLoading: loadingExams } = useCollection<Examination>(examinationsQuery, { includePath: true });
@@ -144,8 +139,7 @@ export function PatientReport({ patient, onBack }: PatientReportProps) {
                 ) : examinations && examinations.length > 0 ? (
                     <Accordion type="single" collapsible className="w-full">
                         {examinations.map(exam => {
-                             const examPathParts = exam.__path.split('/');
-                             const examDoctorId = examPathParts[1];
+                             const examDoctorId = exam.doctorId;
                              return (
                             <AccordionItem value={exam.id} key={exam.id}>
                                 <AccordionTrigger>
@@ -174,3 +168,5 @@ export function PatientReport({ patient, onBack }: PatientReportProps) {
     </div>
   );
 }
+
+    

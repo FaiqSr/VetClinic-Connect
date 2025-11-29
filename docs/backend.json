@@ -352,18 +352,14 @@
         }
       },
       {
-        "path": "/doctors/{doctorId}/patients/{patientId}",
+        "path": "/patients/{patientId}",
         "definition": {
           "entityName": "Patient",
           "schema": {
             "$ref": "#/backend/entities/Patient"
           },
-          "description": "Stores patient information associated with a specific doctor.",
+          "description": "Stores patient information.",
           "params": [
-            {
-              "name": "doctorId",
-              "description": "The unique identifier for the doctor."
-            },
             {
               "name": "patientId",
               "description": "The unique identifier for the patient."
@@ -372,18 +368,14 @@
         }
       },
       {
-        "path": "/doctors/{doctorId}/patients/{patientId}/clients/{clientId}",
+        "path": "/patients/{patientId}/clients/{clientId}",
         "definition": {
           "entityName": "Client",
           "schema": {
             "$ref": "#/backend/entities/Client"
           },
-          "description": "Stores client information for a specific patient managed by a doctor.",
+          "description": "Stores client information for a specific patient.",
           "params": [
-            {
-              "name": "doctorId",
-              "description": "The unique identifier for the doctor."
-            },
             {
               "name": "patientId",
               "description": "The unique identifier for the patient."
@@ -396,7 +388,7 @@
         }
       },
       {
-        "path": "/doctors/{doctorId}/patients/{patientId}/presentStatuses/{presentStatusId}",
+        "path": "/patients/{patientId}/presentStatuses/{presentStatusId}",
         "definition": {
           "entityName": "PresentStatus",
           "schema": {
@@ -404,10 +396,6 @@
           },
           "description": "Stores the present status of a patient.",
           "params": [
-            {
-              "name": "doctorId",
-              "description": "The unique identifier for the doctor."
-            },
             {
               "name": "patientId",
               "description": "The unique identifier for the patient."
@@ -420,18 +408,14 @@
         }
       },
       {
-        "path": "/doctors/{doctorId}/patients/{patientId}/examinations/{examinationId}",
+        "path": "/patients/{patientId}/examinations/{examinationId}",
         "definition": {
           "entityName": "Examination",
           "schema": {
             "$ref": "#/backend/entities/Examination"
           },
-          "description": "Stores examination records for a specific patient under a doctor.",
+          "description": "Stores examination records for a specific patient.",
           "params": [
-            {
-              "name": "doctorId",
-              "description": "The unique identifier for the doctor."
-            },
             {
               "name": "patientId",
               "description": "The unique identifier for the patient."
@@ -476,8 +460,10 @@
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to manage veterinary clinic records efficiently.  The structure leverages path-based ownership for `patients`, `clients`, `presentStatuses`, and `examinations` associated with a specific `doctor`. This approach ensures Authorization Independence by storing relevant access control information directly within each document. The `doctors` collection stores doctor profiles, while `medications` and `diseases` are stored in root-level collections since they do not have a direct hierarchical relationship with users and are globally accessible.\n\nAuthorization Independence:\n*   Patient, Client, PresentStatus, and Examination data is nested under the doctor's ID.  Access to this data is controlled by the user ID, and security rules can directly check `request.auth.uid` against the `doctorId` in the path without needing `get()` calls.\n\nQAPs Support:\n*   Segregation:  Data with different access needs is stored in separate collections (e.g., `doctors`, `medications`, `diseases`). This simplifies security rules and avoids the need for complex filtering.\n*   Path-Based Ownership: The use of `/doctors/{doctorId}/patients/{patientId}` creates a clear ownership model, making list operations secure as they are scoped to a specific doctor."
+    "reasoning": "The Firestore data structure is designed to manage veterinary clinic records efficiently. Patients are stored in a root-level collection `/patients`. All patient-specific data like `clients`, `presentStatuses`, and `examinations` are stored in subcollections under each patient document. This creates a clear hierarchical structure. The `doctors` collection stores doctor profiles, while `medications` and `diseases` are stored in root-level collections since they do not have a direct hierarchical relationship with users and are globally accessible."
   }
 }
+
+    
 
     

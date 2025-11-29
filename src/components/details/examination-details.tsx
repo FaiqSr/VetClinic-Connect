@@ -45,13 +45,13 @@ export default function ExaminationDetails({ examination }: ExaminationDetailsPr
 
   // Extract correct doctorId and patientId from the examination's path
   const pathParts = examination.__path.split('/');
-  const doctorId = pathParts[1];
-  const patientId = pathParts[3];
+  const patientId = pathParts[1];
+  const doctorId = examination.doctorId;
 
   // Memoize document and query references to prevent re-renders
-  const doctorRef = useMemoFirebase(() => firestore ? doc(firestore, 'doctors', doctorId) : null, [firestore, doctorId]);
-  const patientRef = useMemoFirebase(() => firestore ? doc(firestore, 'doctors', doctorId, 'patients', patientId) : null, [firestore, doctorId, patientId]);
-  const statusRef = useMemoFirebase(() => firestore ? doc(firestore, 'doctors', doctorId, 'patients', patientId, 'presentStatuses', examination.presentStatusId) : null, [firestore, doctorId, patientId, examination.presentStatusId]);
+  const doctorRef = useMemoFirebase(() => firestore && doctorId ? doc(firestore, 'doctors', doctorId) : null, [firestore, doctorId]);
+  const patientRef = useMemoFirebase(() => firestore && patientId ? doc(firestore, 'patients', patientId) : null, [firestore, patientId]);
+  const statusRef = useMemoFirebase(() => firestore && patientId ? doc(firestore, 'patients', patientId, 'presentStatuses', examination.presentStatusId) : null, [firestore, patientId, examination.presentStatusId]);
   
   const diseasesQuery = useMemoFirebase(() => {
     if (!firestore || !examination.diseaseIds || examination.diseaseIds.length === 0) return null;
@@ -127,3 +127,5 @@ export default function ExaminationDetails({ examination }: ExaminationDetailsPr
     </div>
   );
 }
+
+    

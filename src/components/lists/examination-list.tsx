@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -128,7 +129,7 @@ export function ExaminationList() {
                       >
                         <ExaminationForm
                           isEditMode
-                          initialData={{...exam, date: new Date(exam.date)}}
+                          initialData={{...exam, date: new Date(exam.date), patientId: exam.__path.split('/')[1]}}
                         />
                       </FormDialog>
                       <AlertDialog>
@@ -169,3 +170,5 @@ export function ExaminationList() {
     </Card>
   );
 }
+
+    

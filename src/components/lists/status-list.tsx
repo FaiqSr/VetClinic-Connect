@@ -111,7 +111,7 @@ export function StatusList() {
                           </Button>
                         }
                       >
-                        <StatusForm initialData={status} isEditMode />
+                        <StatusForm initialData={{...status, patientId: status.__path.split('/')[1]}} isEditMode />
                       </FormDialog>
                        <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -151,3 +151,5 @@ export function StatusList() {
     </Card>
   );
 }
+
+    
