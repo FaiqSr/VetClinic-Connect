@@ -24,7 +24,8 @@ interface Doctor { name: string; }
 interface Patient { name: string; species: string; breed: string; }
 interface Disease { diseaseId: string; name: string; id: string; }
 interface PresentStatus {
-    actions: string;
+    anamnesis: string;
+    temuan: string;
     behavior: string;
     hydration: string;
     posture: string;
