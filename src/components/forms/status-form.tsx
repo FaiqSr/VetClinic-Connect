@@ -5,7 +5,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { collection, collectionGroup, doc } from "firebase/firestore"
+import { collection, doc } from "firebase/firestore"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -75,7 +75,7 @@ export default function StatusForm({ initialData, isEditMode = false, closeDialo
     },
   })
   
-  const patientsQuery = useMemoFirebase(() => firestore ? collectionGroup(firestore, 'patients') : null, [firestore]);
+  const patientsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'patients') : null, [firestore]);
   const { data: patients, isLoading: isLoadingPatients } = useCollection<Patient>(patientsQuery);
 
 
@@ -91,7 +91,7 @@ export default function StatusForm({ initialData, isEditMode = false, closeDialo
 
     // Use existing ID for edit mode, or generate a new one for create mode
     const statusId = (isEditMode && data.id) ? data.id : doc(collection(firestore, 'dummy')).id;
-    const statusRef = doc(firestore, `doctors/${user.uid}/patients/${data.patientId}/presentStatuses`, statusId);
+    const statusRef = doc(firestore, `patients/${data.patientId}/presentStatuses`, statusId);
     
     // Ensure the ID is part of the data being saved
     const dataToSave = { ...data, id: statusId };

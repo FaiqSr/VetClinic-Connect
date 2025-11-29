@@ -20,18 +20,26 @@ import { StatusList } from '@/components/lists/status-list';
 import { MedicationList } from '@/components/lists/medication-list';
 import { DiseaseList } from '@/components/lists/disease-list';
 import { ScheduleCalendar } from '@/components/schedule-calendar';
+import { PatientReport } from '@/components/reports/patient-report';
 import { useUser } from '@/firebase';
 import LoginForm from '@/components/forms/login-form';
 import RegisterForm from '@/components/forms/register-form';
 import { Spinner } from '@/components/ui/spinner';
+import type { Patient } from '@/components/reports/patient-report';
 
-export type View = 'dashboard' | 'patient' | 'client' | 'status' | 'doctor' | 'medication' | 'examination' | 'disease' | 'schedule' | 'doctor-list' | 'patient-list' | 'client-list' | 'examination-list' | 'status-list' | 'medication-list' | 'disease-list';
+export type View = 'dashboard' | 'patient' | 'client' | 'status' | 'doctor' | 'medication' | 'examination' | 'disease' | 'schedule' | 'doctor-list' | 'patient-list' | 'client-list' | 'examination-list' | 'status-list' | 'medication-list' | 'disease-list' | 'patient-report';
 type AuthView = 'login' | 'register';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const [activeView, setActiveView] = useState<View>('dashboard');
   const [authView, setAuthView] = useState<AuthView>('login');
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+
+  const handleSelectPatient = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setActiveView('patient-report');
+  };
 
   const renderView = () => {
     switch (activeView) {
@@ -54,7 +62,7 @@ export default function Home() {
       case 'doctor-list':
         return <DoctorList />;
       case 'patient-list':
-        return <PatientList />;
+        return <PatientList onSelectPatient={handleSelectPatient} />;
       case 'client-list':
         return <ClientList />;
       case 'examination-list':
@@ -65,6 +73,8 @@ export default function Home() {
         return <MedicationList />;
       case 'disease-list':
         return <DiseaseList />;
+      case 'patient-report':
+        return selectedPatient ? <PatientReport patient={selectedPatient} onBack={() => setActiveView('patient-list')} /> : <DashboardWelcome />;
       case 'dashboard':
       default:
         return <DashboardWelcome />;
