@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -139,13 +140,16 @@ export function PatientReport({ patient, onBack }: PatientReportProps) {
                     </div>
                 ) : examinations && examinations.length > 0 ? (
                     <Accordion type="single" collapsible className="w-full">
-                        {examinations.map(exam => (
+                        {examinations.map(exam => {
+                             const examPathParts = exam.__path.split('/');
+                             const examDoctorId = examPathParts[1];
+                             return (
                             <AccordionItem value={exam.id} key={exam.id}>
                                 <AccordionTrigger>
                                     <div className="flex justify-between items-center w-full pr-4">
                                         <div className="text-left">
                                             <p className="font-semibold">Pemeriksaan tanggal: {format(new Date(exam.date), 'PPP', { locale: id })}</p>
-                                            <p className="text-sm text-muted-foreground">Dokter: {exam.doctorId}</p>
+                                            <p className="text-sm text-muted-foreground">Dokter: {examDoctorId}</p>
                                         </div>
                                         <p className="text-sm font-medium text-right">Diagnosis: {exam.diagnosis}</p>
                                     </div>
@@ -154,7 +158,8 @@ export function PatientReport({ patient, onBack }: PatientReportProps) {
                                     <ExaminationDetails examination={exam} />
                                 </AccordionContent>
                             </AccordionItem>
-                        ))}
+                             )
+                        })}
                     </Accordion>
                 ) : (
                     <p className="text-sm text-muted-foreground text-center py-8">
