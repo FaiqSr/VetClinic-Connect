@@ -65,8 +65,11 @@ export function PatientReport({ patient, onBack }: PatientReportProps) {
   }, [firestore, doctorId, patientId]);
 
   const examinationsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'doctors', doctorId, 'patients', patientId, 'examinations'), orderBy('date', 'desc'));
+    if (!firestore || !patientId) return null;
+    // Corrected path for examinations, assuming it's a subcollection of a patient document
+    // The patient document itself is inside a doctor's patient subcollection.
+    const patientDocPath = `doctors/${doctorId}/patients/${patientId}`;
+    return query(collection(firestore, patientDocPath, 'examinations'), orderBy('date', 'desc'));
   }, [firestore, doctorId, patientId]);
 
   const { data: clients, isLoading: loadingClients } = useCollection<Client>(clientsQuery, { includePath: true });
