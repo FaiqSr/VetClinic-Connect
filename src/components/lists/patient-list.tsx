@@ -14,11 +14,13 @@ import {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
 import { Button } from '../ui/button';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, BookOpen, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import FormDialog from '../forms/form-dialog';
 import PatientForm from '../forms/patient-form';
+import { useState, useMemo } from 'react';
+import { Input } from '../ui/input';
 
 interface Patient {
   id: string;
@@ -31,10 +33,16 @@ interface Patient {
   __path: string;
 }
 
-export function PatientList() {
+interface PatientListProps {
+  onSelectPatient: (patient: Patient) => void;
+}
+
+
+export function PatientList({ onSelectPatient }: PatientListProps) {
   const { firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState('');
 
   const patientsQuery = useMemoFirebase(() => {
     if (!firestore || isUserLoading) return null;
@@ -44,6 +52,14 @@ export function PatientList() {
   const { data: patients, isLoading: isPatientsLoading } = useCollection<Patient>(patientsQuery, { includePath: true });
 
   const isLoading = isPatientsLoading || isUserLoading;
+
+  const filteredPatients = useMemo(() => {
+    if (!patients) return [];
+    return patients.filter(patient =>
+      patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.id.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [patients, searchTerm]);
 
   const handleDelete = (patient: Patient) => {
     if (!firestore || !patient.__path) return;
@@ -59,7 +75,16 @@ export function PatientList() {
     <Card>
       <CardHeader>
         <CardTitle>Daftar Pasien</CardTitle>
-        <CardDescription>Berikut adalah daftar semua pasien yang terdaftar di sistem.</CardDescription>
+        <CardDescription>Berikut adalah daftar semua pasien yang terdaftar di sistem. Anda dapat mencari berdasarkan nama atau ID.</CardDescription>
+        <div className="relative mt-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+                placeholder="Cari Pasien..."
+                className="pl-9"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+            />
+        </div>
       </CardHeader>
       <CardContent className="overflow-x-auto">
         <Table>
@@ -86,11 +111,11 @@ export function PatientList() {
                   <TableCell><Skeleton className="h-4 w-[50px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[50px]" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
-                  <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="h-8 w-28 ml-auto" /></TableCell>
                 </TableRow>
               ))}
-            {!isLoading && patients && patients.length > 0 ? (
-              patients.map((patient) => (
+            {!isLoading && filteredPatients.length > 0 ? (
+              filteredPatients.map((patient) => (
                 <TableRow key={patient.__path}>
                   <TableCell className="font-medium whitespace-nowrap">{patient.id}</TableCell>
                   <TableCell className="font-medium whitespace-nowrap">{patient.name}</TableCell>
@@ -101,6 +126,10 @@ export function PatientList() {
                   <TableCell>{patient.gender}</TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex gap-2">
+                       <Button variant="outline" size="sm" onClick={() => onSelectPatient(patient)}>
+                          <BookOpen className="h-4 w-4 mr-2" />
+                          Lihat Riwayat
+                       </Button>
                        <FormDialog
                         title="Edit Pasien"
                         description="Ubah detail pasien di bawah ini."
@@ -139,7 +168,7 @@ export function PatientList() {
               !isLoading && (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center">
-                    Tidak ada data pasien.
+                    {searchTerm ? `Tidak ada pasien yang cocok dengan "${searchTerm}".` : "Tidak ada data pasien."}
                   </TableCell>
                 </TableRow>
               )
