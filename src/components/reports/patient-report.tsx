@@ -10,9 +10,10 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { ClientList } from '@/components/lists/client-list';
 import { Button } from '../ui/button';
-import { ArrowLeft, User, PawPrint, ClipboardList, Stethoscope } from 'lucide-react';
+import { ArrowLeft, User, PawPrint, ClipboardList, Stethoscope, Printer } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import ExaminationDetails from '../details/examination-details';
+import { openPrintPopup } from './printable-report';
 
 export interface Patient {
   id: string;
@@ -63,14 +64,18 @@ export function PatientReport({ patient, onBack }: PatientReportProps) {
 
   const examinationsQuery = useMemoFirebase(() => {
     if (!firestore || !patientId) return null;
-    const patientDocPath = `patients/${patientId}`;
-    return query(collection(firestore, patientDocPath, 'examinations'), orderBy('date', 'desc'));
+    return query(collection(firestore, 'patients', patientId, 'examinations'), orderBy('date', 'desc'));
   }, [firestore, patientId]);
 
   const { data: clients, isLoading: loadingClients } = useCollection<Client>(clientsQuery, { includePath: true });
   const { data: examinations, isLoading: loadingExams } = useCollection<Examination>(examinationsQuery, { includePath: true });
 
   const isLoading = loadingClients || loadingExams;
+
+  const handlePrint = () => {
+    if (!patientId) return;
+    openPrintPopup(patientId);
+  };
 
   const PatientInfoCard = () => (
      <Card>
@@ -118,6 +123,10 @@ export function PatientReport({ patient, onBack }: PatientReportProps) {
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Kembali ke Daftar Pasien
             </Button>
+            <Button onClick={handlePrint}>
+              <Printer className="mr-2 h-4 w-4" />
+              Cetak Laporan Lengkap
+            </Button>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
            <PatientInfoCard />
@@ -139,14 +148,14 @@ export function PatientReport({ patient, onBack }: PatientReportProps) {
                 ) : examinations && examinations.length > 0 ? (
                     <Accordion type="single" collapsible className="w-full">
                         {examinations.map(exam => {
-                             const examDoctorId = exam.doctorId;
+                             const doctorId = exam.__path.split('/')[1] === 'doctors' ? exam.__path.split('/')[2] : exam.doctorId;
                              return (
                             <AccordionItem value={exam.id} key={exam.id}>
                                 <AccordionTrigger>
                                     <div className="flex justify-between items-center w-full pr-4">
                                         <div className="text-left">
                                             <p className="font-semibold">Pemeriksaan tanggal: {format(new Date(exam.date), 'PPP', { locale: id })}</p>
-                                            <p className="text-sm text-muted-foreground">Dokter: {examDoctorId}</p>
+                                            <p className="text-sm text-muted-foreground">Dokter ID: {exam.doctorId}</p>
                                         </div>
                                         <p className="text-sm font-medium text-right">Diagnosis: {exam.diagnosis}</p>
                                     </div>
@@ -168,5 +177,3 @@ export function PatientReport({ patient, onBack }: PatientReportProps) {
     </div>
   );
 }
-
-    

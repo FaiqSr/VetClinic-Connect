@@ -15,13 +15,14 @@ import {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
 import { Button } from '../ui/button';
-import { Pencil, Trash2, BookOpen, Search } from 'lucide-react';
+import { Pencil, Trash2, BookOpen, Search, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import FormDialog from '../forms/form-dialog';
 import PatientForm from '../forms/patient-form';
 import { useState, useMemo } from 'react';
 import { Input } from '../ui/input';
+import { openPrintPopup } from '../reports/printable-report';
 
 interface Patient {
   id: string;
@@ -71,6 +72,10 @@ export function PatientList({ onSelectPatient }: PatientListProps) {
         description: `Pasien dengan nama ${patient.name} telah dihapus.`,
     });
   }
+
+  const handlePrint = (patientId: string) => {
+    openPrintPopup(patientId);
+  };
 
   return (
     <Card>
@@ -126,10 +131,13 @@ export function PatientList({ onSelectPatient }: PatientListProps) {
                   <TableCell>{patient.weight}</TableCell>
                   <TableCell>{patient.gender}</TableCell>
                   <TableCell className="text-right">
-                    <div className="inline-flex gap-2">
+                    <div className="inline-flex gap-1">
                        <Button variant="outline" size="sm" onClick={() => onSelectPatient(patient)}>
-                          <BookOpen className="h-4 w-4 mr-2" />
-                          Lihat Riwayat
+                          <BookOpen className="h-4 w-4 md:mr-2" />
+                          <span className="hidden md:inline">Riwayat</span>
+                       </Button>
+                       <Button variant="ghost" size="icon" onClick={() => handlePrint(patient.id)}>
+                          <Printer className="h-4 w-4" />
                        </Button>
                        <FormDialog
                         title="Edit Pasien"
@@ -180,5 +188,3 @@ export function PatientList({ onSelectPatient }: PatientListProps) {
     </Card>
   );
 }
-
-    
