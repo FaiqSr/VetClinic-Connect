@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { useDoc, useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, orderBy } from 'firebase/firestore';
 import { format } from 'date-fns';
@@ -171,13 +171,15 @@ export function openPrintPopup(patientId: string, examinationId?: string) {
         }, 500);
     };
 
-    ReactDOM.render(
+    const root = createRoot(printRoot);
+    root.render(
       <AppProvider>
         <PrintableReport patientId={patientId} examinationId={examinationId} onLoaded={onLoaded} />
-      </AppProvider>,
-      printRoot
+      </AppProvider>
     );
   }
 }
 
 export default PrintableReport;
+
+    
