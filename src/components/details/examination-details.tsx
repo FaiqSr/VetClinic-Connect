@@ -7,6 +7,9 @@ import { useFirebase, useMemoFirebase, useDoc, useCollection } from '@/firebase'
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { Button } from '../ui/button';
+import { Printer } from 'lucide-react';
+import { openPrintPopup } from '../reports/printable-report';
 
 interface Examination {
   id: string;
@@ -65,6 +68,11 @@ export default function ExaminationDetails({ examination }: ExaminationDetailsPr
   const { data: status, isLoading: loadingStatus } = useDoc<PresentStatus>(statusRef);
 
   const isLoading = loadingDoctor || loadingPatient || loadingDiseases || loadingStatus;
+  
+  const handlePrint = () => {
+    openPrintPopup(patientId, examination.id);
+  };
+
 
   const DetailItem = ({ label, value, isLoading }: { label: string; value: React.ReactNode; isLoading?: boolean }) => (
     <div>
@@ -81,10 +89,17 @@ export default function ExaminationDetails({ examination }: ExaminationDetailsPr
 
   return (
     <div className="space-y-6 p-1">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-        <DetailItem label="Tanggal Pemeriksaan" value={format(new Date(examination.date), 'PPP')} isLoading={isLoading} />
-        <DetailItem label="Dokter Pemeriksa" value={doctor?.name} isLoading={isLoading} />
+      <div className="flex justify-between items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+            <DetailItem label="Tanggal Pemeriksaan" value={format(new Date(examination.date), 'PPP')} isLoading={isLoading} />
+            <DetailItem label="Dokter Pemeriksa" value={doctor?.name} isLoading={isLoading} />
+        </div>
+        <Button variant="outline" size="sm" onClick={handlePrint}>
+            <Printer className="h-4 w-4 mr-2" />
+            Cetak
+        </Button>
       </div>
+
 
       <div className="p-4 border rounded-lg space-y-3 bg-muted/50">
         <h3 className="text-md font-semibold mb-2">Informasi Pasien</h3>
@@ -127,5 +142,3 @@ export default function ExaminationDetails({ examination }: ExaminationDetailsPr
     </div>
   );
 }
-
-    

@@ -125,7 +125,7 @@ export function PatientReport({ patient, onBack }: PatientReportProps) {
             </Button>
             <Button onClick={handlePrint}>
               <Printer className="mr-2 h-4 w-4" />
-              Cetak Laporan
+              Cetak Laporan Lengkap
             </Button>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -155,7 +155,7 @@ export function PatientReport({ patient, onBack }: PatientReportProps) {
                                     <div className="flex justify-between items-center w-full pr-4">
                                         <div className="text-left">
                                             <p className="font-semibold">Pemeriksaan tanggal: {format(new Date(exam.date), 'PPP', { locale: id })}</p>
-                                            <p className="text-sm text-muted-foreground">Dokter: {exam.doctorId}</p>
+                                            <p className="text-sm text-muted-foreground">Dokter ID: {exam.doctorId}</p>
                                         </div>
                                         <p className="text-sm font-medium text-right">Diagnosis: {exam.diagnosis}</p>
                                     </div>
